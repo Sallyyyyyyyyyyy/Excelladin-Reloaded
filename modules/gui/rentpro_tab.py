@@ -49,12 +49,22 @@ class RentproTab:
         del label_stijl["font"]
         instructieLabel = tk.Label(
             self.container,
-            text="Synchronisatie met Rentpro",
+            text="Gegevens downloaden van Rentpro",
             **label_stijl,
             pady=10,
             font=("Arial", 14, "bold")
         )
         instructieLabel.pack(fill=tk.X)
+        
+        # Thematische quote
+        quoteLabel = tk.Label(
+            self.container,
+            text="\"Als een dief in de nacht, zo stil haalt Excelladin uw gegevens binnen...\"",
+            **STIJLEN["label"],
+            font=("Arial", 10, "italic"),
+            fg="#fdb04d"  # Gouden kleur voor de quote
+        )
+        quoteLabel.pack(fill=tk.X, pady=(0, 10))
         
         # Frame voor inloggegevens
         inlogFrame = tk.Frame(
@@ -145,6 +155,21 @@ class RentproTab:
         )
         optiesLabel.pack(fill=tk.X)
         
+        # Onthoud inloggegevens optie
+        self.onthoudInlogVar = tk.BooleanVar(value=False)
+        onthoudInlogCheck = tk.Checkbutton(
+            inlogFrame,
+            text="Inloggegevens onthouden",
+            variable=self.onthoudInlogVar,
+            background=KLEUREN["achtergrond"],
+            foreground="#FFFFFF",
+            selectcolor="#b01345",
+            activebackground=KLEUREN["achtergrond"],
+            activeforeground="#FFFFFF"
+        )
+        onthoudInlogCheck.pack(anchor=tk.W, pady=5)
+        Tooltip(onthoudInlogCheck, "Sla inloggegevens op voor volgende sessie")
+        
         # Overschrijf lokale data optie
         self.overschrijfVar = tk.BooleanVar(value=False)
         overschrijfCheck = tk.Checkbutton(
@@ -155,10 +180,11 @@ class RentproTab:
             foreground="#FFFFFF",
             selectcolor="#b01345",
             activebackground=KLEUREN["achtergrond"],
-            activeforeground="#FFFFFF"
+            activeforeground="#FFFFFF",
+            command=self.toon_overschrijf_waarschuwing
         )
         overschrijfCheck.pack(anchor=tk.W, pady=5)
-        Tooltip(overschrijfCheck, "Als deze optie ingeschakeld is, worden lokale gegevens overschreven door Rentpro data. Anders worden alleen lege velden gevuld.")
+        Tooltip(overschrijfCheck, "Als deze optie ingeschakeld is, worden lokale gegevens overschreven door Rentpro data. Anders worden alleen lege velden aangevuld.")
         
         # Bereik selectie frame
         bereikFrame = tk.Frame(
@@ -266,10 +292,10 @@ class RentproTab:
         )
         actieFrame.pack(fill=tk.X, pady=10)
         
-        # Start knop
+        # Start knop met thematische tekst
         self.startButton = tk.Button(
             actieFrame,
-            text="Start Synchronisatie",
+            text="Open Sesam! Start Synchronisatie",
             command=self.start_synchronisatie,
             bg="#007bff",  # Blauw
             fg="#FFFFFF",  # Wit
@@ -277,7 +303,7 @@ class RentproTab:
             height=2
         )
         self.startButton.pack(fill=tk.X)
-        Tooltip(self.startButton, "Start de synchronisatie met Rentpro")
+        Tooltip(self.startButton, "Start de synchronisatie met Rentpro - Laat de magie beginnen!")
         
         # Voortgangsbalk
         voortgangFrame = tk.Frame(

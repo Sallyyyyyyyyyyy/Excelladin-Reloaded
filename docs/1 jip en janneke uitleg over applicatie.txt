@@ -1,0 +1,89 @@
+Overzicht
+Dit is het definitieve plan voor het bouwen van Exceladdin Reloaded in 1 uur. Dit document dient als complete gids voor het hele bouwproces en wordt bij elke bouwstap geraadpleegd om consistentie te waarborgen.
+BELANGRIJK: Het bouwen van deze applicatie houdt in dat er een volledig werkende applicatie wordt opgeleverd. Dit betekent dat alle scripts 100% compleet en functioneel moeten zijn. Er worden alleen complete scripts geaccepteerd, geen gedeeltelijke of niet-werkende code.
+Specificaties
+•	Afmetingen: 400x800 pixels (vast)
+•	Taal: 100% Nederlands (UI en code)
+•	Thema: Eenvoudig 1001 Nachten thema
+•	Bouwtijd: niet langer dan 1 uur
+
+
+in een notendop gaat het programma dit doen:
+Er wordt een reeds klare excel sheet aangeleverd die ingelezen moet worden.
+Er komen acties. een actie doet iets met een kolom in excel. (Bijvoorbeeld vullen met data gecombineerd uit andere kolommen) 
+een actie kan handmatig gestart worden
+een actie kan door middel van een checkbox geselecteerd worden, samen met andere acties. Deze kunnen dan in één keer wordt gestart met een knop. Dit noemen we een workflow.
+Acties en workflows kunnen per excel regel, regel bereik of voor alles worden afgevuurd.
+
+Dat is de functionaliteit. verder nog wat kleine dingen als koppelen met de openAI API, een simpel thema.
+
+Welke tips heb je nu en zou je meenemen nu je dit weet? Nogmaals zo simpel mogelijk moet deze applicatie worden.
+moet je het nog verder specificeren zodat wanneer je het straks gaat bouwen in een nieuwe chat, je telkens dezelfde richtlijnen volgt? En datzelfde voor een 'Uitbreidingen en Wijzigingen' stijlsheet. die ga je voor jezelf maken zodat in de toekomst wanneer ik nieuwe functionaliteit wil ik je deze stijlsheet maa kan sturen en je daarin ruim genoeg info hebt staan om alle sin één keer goed te bouwen. Maak alvast een knop in de pplicatie die deze stijlsheet automatisch bijwerkt, mochten er in de toekomst patches worden gedraaid waardoor de sheet niet meer overeenkomt. je maghier ook een andere slimme oplossing voor verzinnen. update alleen het aanpak document.
+
+
+Alles in het Nederlands, de chat en de applicatie.
+
+Wanneer je dit gaat bouwen, zorg dat tijdens het bouwen je exact dezelfde methodes gebruikt, ook als het bouwen in meerdere stappen moet gebeuren door chat limieten.
+
+Houd het zo simpel als mogelijk
+
+-
+In het aanpak document alleen de beschrijvingen, structuur en richtlijnen op te nemen
+
+
+Een bouwsessie/verzoek zal door middel van de Clause chats gaan. ik kan dus alleen maar met tekst en attatchments werken.
+Voeg ook toe dat bij het hoveren met de muis over elke knop, functie en eigenlijk alles dat interactief is een uitleg verschijnt over wat er gebeurd en wat dat doet.
+dit document zal ik bij het bouwen en elke nieuwe bouwstap met je delen. ook zal ik je laatst gemaakt script of code naar je terug sturen. Deze kan je dan controleren of het in lijn is met het aanpak document en je weet precies waar je verder moet gaan
+
+zeer simpel en doeltreffend en erg makkelijk om te troubleshooten, uit te breiden, wijzigngen te maken en door een leek te beheren is.
+
+Zorg dat een simpel 1001 nacht thema erin verwerkt wordt.
+Bouw het helemaal opnieuw op volgens algemene standaarden. specificeer deze ook.
+Limiteer scripts tot 400 regels aan code en specificeer hoe je langere script splitst.
+Structuur moet zo simpel en makkelijk mogelijk zijn.
+Specificeer alles, in de toekomst ga je dit document ook gebruiken bij nieuwe functies en uitbreidingen en wijzigingen.
+Houd het super simpel.
+Ik wil dat je het heel snel kunt bouwen.
+Begin overnieuw met alles om het overnemen van fouten te voorkomen.
+Specificeer alles.
+ik wil het zeer makkelijk uit kunnen breiden met een patch file in de root zonder telkens allerlei files en fouten tegen te komen
+
+moet je het nog verder specificeren zodat wanneer je het straks gaat bouwen in een nieuwe chat, je telkens dezelfde richtlijnen volgt? En datzelfde voor een 'Uitbreidingen en Wijzigingen' stijlsheet. die ga je voor jezelf maken zodat in de toekomst wanneer ik nieuwe functionaliteit wil ik je deze stijlsheet maa kan sturen en je daarin ruim genoeg info hebt staan om alle sin één keer goed te bouwen. Maak alvast een knop in de pplicatie die deze stijlsheet automatisch bijwerkt, mochten er in de toekomst patches worden gedraaid waardoor de sheet niet meer overeenkomt. je maghier ook een andere slimme oplossing voor verzinnen. update alleen het aanpak document.
+Applicatie is standaard 400 pixels breed en 800 pixels hoog.
+Gebruik een font grootte van 10
+Alles in het Nederlands, de chat en de applicatie.
+Wanneer je dit gaat bouwen, zorg dat tijdens het bouwen je exact dezelfde methodes gebruikt, ook als het bouwen in meerdere stappen moet gebeuren door chat limieten.
+Houd het zo simpel als mogelijk
+
+en ik wil dat de applicatie wanneer deze af is, portable is te maken (.exe) ofzoiets. En alles, inclusief logging in 1001 nacht thema. dit hoeft niet gewijzigd te worden later. Kies ook een font in stijl welke bovenaan prijkt en daarnaast komt een afbeelding van 50 pixels hoog. maak een placeholder, die afbeelding volgt later.
+
+patch systeem gaat een file in de root zijn die heet: Patch2theRescue.py Hier zal telkens een nieuw script inkomen welke de patch uitvoert. Er moet ook een file zijn die aan de patchmaker (buiten dit programma, is een AI) duidelijk uitlegt waar de patch aan moet voldoen en welke manieren etc er gebruikt worden om te zorgen dat de patch niet iets oplost en iets anders sloopt. dit bestand moet de laatste log met daarin de fouten bevatten. DUs zodra er iets niet werkt, dan kan ik direct die file bijde AI aanbieden en hoef er verder geen enkele instructies bij te tikken. zorg ook dat als de AI iets nodig heeft of iets niet duidelijk heeft hij dit vraagt alvorens op de gok een fix te gaan patchen en door te gaan. Noem dit bestand: PatchCalling4Emergency.txt
+
+we gaan er helemaal aan het einde wanneer alles klaar is ene portable exe van maken.
+
+Ik hoef geen uitgebreide documentatie maar wel veel gebruikershulpen en uitleg in de applicatie.
+
+Alles in thema.
+Bovenaan de applicatie een placeholder voor een afbeelding van 50 pixels hoog.
+Daarnaast (rechts) in een header de titel in het font Papyrus.
+Daaronder tabbladen:
+
+1 Sheet kiezen - selecteer de juiste excel sheet en een chackmark mogelijkheid om deze te onthouden bij het volgende keer starten van de applicatie.
+2 Acties - Hier kunnen we acties op Kolommen uitvoeren. zet acties onder elkaar. een actie is een wijziging van één kolom. Bijvoorbeeld het vullen van een kolom met data uit twee andere kolommen. elke actie krijgt de naam van ''%de kolom%+vullen''. een knop erachter om die actie uit te voeren. en een checkmark mogelijkheid ervoor. Onderaan is er de mogelijkheid indien er meerdere acties geselecteerd zijn deze allemaal in die volgorde uit te voeren, waarbij er eerst wordt gecontroleerd of de voorgaande acties succesvol is afgerond.
+Chat en applicatie en logs in het nederlands.
+Indien er foutmeldingen ontstaan, toon dan een popup met een kopieer knop en een OK knop.
+
+Bouw een afsluiten en opslaan knop. Sluit hiermee de applicatie maar ook Excel, en sla die file op. Voordat je dit doet, maak een kopie van de laatste versie voor het geval er iets fout is gegaan.
+
+Tooltips
+gebruikers moet zeer duidelijk bij alle functies uitleg zien of krijgen dmv hoverbnoxen/ dus als je de muis ergens op houd dat er dan een klein tekstboxje verschijtn met uitleg.
+
+gebruik tkinker voor de gui.
+
+Maak nu een tekst bestand Excelladin Reloaded, met daarin alle informatie die noodzakelijk is om consistent te bouwen, ook wanneer dit op verschillende momenten in verschillende chats met de AI gebeurd. Geeft eerst een algemene menselijke visuele beschrijving van hoe de applicatie eruit komt te zien en hoe het gaat werken werkt. Daarna een zo technisch volledig mogelijke gespecificeerde instructie voor een AI om dit te kunnen gaan bouwen.
+
+
+voeg in het document toe: Bouwmethode Instructies voor jezelf die je gaat snappen over meerdere chat sessies.
+Voortgangscontrole op de laatste pagina door middel van checkboxen zodat je het weer snel op kan pakken daarna.
+
+MAAK DE APPLICATIE ZO SIMPEL MOGELIJK MAAR DE BOUWUITLEG  UITGEBREID EN VOLLEDIG.

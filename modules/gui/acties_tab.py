@@ -176,27 +176,27 @@ class ActiesTab:
             buttonFrame = tk.Frame(frame, background=KLEUREN["achtergrond"])
             buttonFrame.pack(fill=tk.X, pady=5)
             
-                selectAllBtn = tk.Button(
-                    buttonFrame, 
-                    text="Selecteer alles", 
-                    command=lambda c=categorie: self.selecteerAlleActies(c, True),
-                    bg="#000080",  # Donkerblauw
-                    fg="#FFFF00",  # Fel geel
-                    font=("Arial", 10)
-                )
-                selectAllBtn.pack(side=tk.LEFT, padx=5)
-                Tooltip(selectAllBtn, f"Selecteer alle acties in de categorie '{categorie}'")
-                
-                deselectAllBtn = tk.Button(
-                    buttonFrame, 
-                    text="Deselecteer alles",
-                    command=lambda c=categorie: self.selecteerAlleActies(c, False),
-                    bg="#000080",  # Donkerblauw
-                    fg="#FFFF00",  # Fel geel
-                    font=("Arial", 10)
-                )
-                deselectAllBtn.pack(side=tk.LEFT, padx=5)
-                Tooltip(deselectAllBtn, f"Deselecteer alle acties in de categorie '{categorie}'")
+            selectAllBtn = tk.Button(
+                buttonFrame, 
+                text="Selecteer alles", 
+                command=lambda c=categorie: self.selecteerAlleActies(c, True),
+                bg="#000080",  # Donkerblauw
+                fg="#FFFF00",  # Fel geel
+                font=("Arial", 10)
+            )
+            selectAllBtn.pack(side=tk.LEFT, padx=5)
+            Tooltip(selectAllBtn, f"Selecteer alle acties in de categorie '{categorie}'")
+            
+            deselectAllBtn = tk.Button(
+                buttonFrame, 
+                text="Deselecteer alles",
+                command=lambda c=categorie: self.selecteerAlleActies(c, False),
+                bg="#000080",  # Donkerblauw
+                fg="#FFFF00",  # Fel geel
+                font=("Arial", 10)
+            )
+            deselectAllBtn.pack(side=tk.LEFT, padx=5)
+            Tooltip(deselectAllBtn, f"Deselecteer alle acties in de categorie '{categorie}'")
             
             # Scroll container voor acties
             actieScrollFrame = tk.Frame(
@@ -307,12 +307,17 @@ class ActiesTab:
                 )
                 actieFrame.pack(fill=tk.X, pady=2)
                 
-                # Selectie checkbox
+                # Selectie checkbox met duidelijke gele kleur op donkere achtergrond
                 checkVar = tk.BooleanVar(value=False)
-                checkBox = ttk.Checkbutton(
+                checkBox = tk.Checkbutton(
                     actieFrame,
                     text=f"{actie.naam}",
-                    variable=checkVar
+                    variable=checkVar,
+                    background=KLEUREN["achtergrond"],
+                    foreground="#FFFF00",  # Felgeel voor betere zichtbaarheid
+                    selectcolor="#b01345",  # Duidelijke selectiekleur
+                    activebackground=KLEUREN["achtergrond"],
+                    activeforeground="#FFFF00"
                 )
                 checkBox.pack(side=tk.LEFT)
                 
@@ -359,12 +364,17 @@ class ActiesTab:
                     )
                     actieFrame.pack(fill=tk.X, pady=2)
                     
-                    # Selectie checkbox
+                    # Selectie checkbox met duidelijke gele kleur op donkere achtergrond
                     checkVar = tk.BooleanVar(value=False)
-                    checkBox = ttk.Checkbutton(
+                    checkBox = tk.Checkbutton(
                         actieFrame,
                         text=f"{kolomNaam} vullen",
-                        variable=checkVar
+                        variable=checkVar,
+                        background=KLEUREN["achtergrond"],
+                        foreground="#FFFF00",  # Felgeel voor betere zichtbaarheid
+                        selectcolor="#b01345",  # Duidelijke selectiekleur
+                        activebackground=KLEUREN["achtergrond"],
+                        activeforeground="#FFFF00"
                     )
                     checkBox.pack(side=tk.LEFT)
                     

@@ -29,6 +29,11 @@ class RentproTab:
         self.app = app
         self.is_bezig = False
         
+        # Laad opgeslagen inloggegevens
+        from modules.settings import haalRentproGebruikersnaam, haalRentproWachtwoord
+        self.opgeslagen_gebruikersnaam = haalRentproGebruikersnaam()
+        self.opgeslagen_wachtwoord = haalRentproWachtwoord()
+        
         # Bouw de UI
         self._buildUI()
     
@@ -364,6 +369,14 @@ class RentproTab:
         self.resultaatText.pack(fill=tk.BOTH, expand=True)
         resultaatScroll.config(command=self.resultaatText.yview)
         
+        # Vul opgeslagen inloggegevens in als ze beschikbaar zijn
+        if self.opgeslagen_gebruikersnaam:
+            self.gebruikersnaamVar.set(self.opgeslagen_gebruikersnaam)
+            self.onthoudInlogVar.set(True)
+        if self.opgeslagen_wachtwoord:
+            self.wachtwoordVar.set(self.opgeslagen_wachtwoord)
+            self.onthoudInlogVar.set(True)
+        
         # Initiële status
         self.updateResultaat("Gereed voor synchronisatie met Rentpro")
     
@@ -435,9 +448,14 @@ class RentproTab:
         
         # Sla inloggegevens op indien gewenst
         if self.onthoudInlogVar.get():
-            from modules.settings import instellingen
-            instellingen.stelRentproGebruikersnaamIn(gebruikersnaam)
-            instellingen.stelRentproWachtwoordIn(wachtwoord)
+            from modules.settings import stelRentproGebruikersnaamIn, stelRentproWachtwoordIn
+            stelRentproGebruikersnaamIn(gebruikersnaam)
+            stelRentproWachtwoordIn(wachtwoord)
+        else:
+            # Verwijder opgeslagen inloggegevens als gebruiker niet wil onthouden
+            from modules.settings import stelRentproGebruikersnaamIn, stelRentproWachtwoordIn
+            stelRentproGebruikersnaamIn("")
+            stelRentproWachtwoordIn("")
         
         # Start de synchronisatie in een aparte thread
         self.is_bezig = True

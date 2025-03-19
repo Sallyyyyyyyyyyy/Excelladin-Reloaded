@@ -64,12 +64,23 @@ class ExcelladinApp:
         if laatsteBestand and os.path.exists(laatsteBestand):
             self.laadExcelBestand(laatsteBestand)
     
+    def opslaanEnAfsluiten(self):
+        """Sla wijzigingen op en sluit de applicatie af"""
+        if excelHandler.isBestandGeopend():
+            if excelHandler.slaOp():
+                self.updateStatus("Wijzigingen opgeslagen")
+                self.root.destroy()
+            else:
+                self.toonFoutmelding("Fout", "Kon wijzigingen niet opslaan")
+        else:
+            self.root.destroy()
+    
     def bevestigAfsluiten(self):
         """Vraag om bevestiging voordat de applicatie wordt afgesloten"""
         popup = StijlvollePopup(
             self.root,
             "Afsluiten",
-            "Weet je zeker dat je Excelladin Reloaded wilt afsluiten?",
+            "Weet je zeker dat je Excelladin Reloaded wilt afsluiten zonder op te slaan?",
             popup_type="vraag",
             actie_knoppen=[
                 {'tekst': 'Ja', 'commando': lambda: popup.ja_actie(), 'primair': True},
@@ -171,7 +182,7 @@ class ExcelladinApp:
         # Tabbladen
         self._maakTabbladen()
         
-        # Statusbalk
+        # Statusbalk met Opslaan en Afsluiten knoppen
         self._maakStatusbalk()
     
     def _maakHeader(self):
@@ -300,6 +311,18 @@ class ExcelladinApp:
         )
         self.statusLabel.pack(side=tk.LEFT, padx=10)
 
+        # Opslaan en Afsluiten knop
+        self.opslaanAfsluitenButton = tk.Button(
+            self.statusFrame,
+            text="Opslaan en Afsluiten",
+            command=self.opslaanEnAfsluiten,
+            bg="#990000",  # Donkerrood
+            fg="#FFFFFF",  # Wit
+            font=("Arial", 10, "bold")
+        )
+        self.opslaanAfsluitenButton.pack(side=tk.RIGHT, padx=10)
+        Tooltip(self.opslaanAfsluitenButton, "Sla wijzigingen op en sluit de applicatie af")
+        
         # Afsluitknop
         self.afsluitButton = tk.Button(
             self.statusFrame,
@@ -310,7 +333,7 @@ class ExcelladinApp:
             font=("Arial", 10, "bold")
         )
         self.afsluitButton.pack(side=tk.RIGHT, padx=10)
-        Tooltip(self.afsluitButton, "Sluit de applicatie af")
+        Tooltip(self.afsluitButton, "Sluit de applicatie af zonder op te slaan")
     
     def updateStatus(self, statusTekst):
         """

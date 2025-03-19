@@ -102,7 +102,15 @@ class RentproHandler:
                     with self._driver_lock:
                         # Navigeer naar de login pagina
                         logger.logInfo(f"Navigeren naar {self.base_url}")
-                        self.driver.get(self.base_url)
+                        
+                        # Zorg ervoor dat de URL volledig is en correct geformatteerd (inclusief protocol)
+                        url = self.base_url
+                        if not url.startswith(('http://', 'https://')):
+                            url = f"http://{url}"
+                            
+                        # Log de uiteindelijke URL voor debug-doeleinden
+                        logger.logInfo(f"Navigeren naar definitieve URL: {url}")
+                        self.driver.get(url)
                         
                         # Wacht tot de pagina geladen is
                         WebDriverWait(self.driver, self.timeout).until(
@@ -692,74 +700,4 @@ class RentproHandler:
         # Maak een future om het resultaat van de thread terug te geven
         future = asyncio.get_event_loop().create_future()
         
-        def _evalueer_js_process():
-            try:
-                with self._driver_lock:
-                    # Navigeer eerst naar de productenpagina als dat nog niet is gebeurd
-                    if not self._navigeer_naar_producten_sync():
-                        future.set_result(None)
-                        return
-                    
-                    # Wacht tot de pagina geladen is
-                    WebDriverWait(self.driver, self.timeout).until(
-                        EC.presence_of_element_located((By.TAG_NAME, "body"))
-                    )
-                    
-                    # Als de JavaScript code bedoeld is om producten op te halen
-                    if "products" in js_code and "querySelectorAll" in js_code:
-                        # Gebruik de synchrone methode om producten op te halen
-                        producten = self._haal_producten_lijst_sync()
-                        future.set_result(producten)
-                    else:
-                        # Evalueer de JavaScript code direct
-                        try:
-                            result = self.driver.execute_script(js_code)
-                            future.set_result(result)
-                        except Exception as e:
-                            logger.logFout(f"Fout bij evalueren JavaScript: {e}")
-                            future.set_result(None)
-            except Exception as e:
-                logger.logFout(f"Fout bij evalueren JavaScript: {e}")
-                future.set_exception(e)
-        
-        # Start het proces in een aparte thread
-        threading.Thread(target=_evalueer_js_process, daemon=True).start()
-        
-        try:
-            # Wacht op het resultaat
-            return await future
-        except Exception as e:
-            logger.logFout(f"Fout bij evalueren JavaScript: {e}")
-            return None
-    
-    async def close(self):
-        """Sluit de WebDriver sessie"""
-        # Maak een future om het resultaat van de thread terug te geven
-        future = asyncio.get_event_loop().create_future()
-        
-        def _close_process():
-            try:
-                with self._driver_lock:
-                    if self.driver:
-                        self.driver.quit()
-                        self.driver = None
-                        self.ingelogd = False
-                        logger.logInfo("WebDriver sessie gesloten")
-                    future.set_result(True)
-            except Exception as e:
-                logger.logFout(f"Fout bij sluiten WebDriver: {e}")
-                future.set_exception(e)
-        
-        # Start het proces in een aparte thread
-        threading.Thread(target=_close_process, daemon=True).start()
-        
-        try:
-            # Wacht op het resultaat
-            return await future
-        except Exception as e:
-            logger.logFout(f"Fout bij sluiten WebDriver: {e}")
-            return False
-
-
-# Singleton instance voor gebruik in de hele applicatie
-rentproHandler = RentproHandler()
+        def _evalueer_js_

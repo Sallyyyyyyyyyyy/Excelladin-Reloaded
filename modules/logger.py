@@ -19,7 +19,8 @@ class Logger:
         """
         # Melding geven als oude parameter wordt gebruikt
         if logBestandsnaam is not None and logBestandsnaam != "PatchCalling4Emergency.txt":
-            print(f"Waarschuwing: Aangepaste logbestandsnaam '{logBestandsnaam}' wordt genegeerd. Logbestanden worden nu opgeslagen in de 'logs' map.")
+            # Verwijder print statement om terminal venster te voorkomen
+            pass
             
         # Zorg dat de logs map bestaat
         if not os.path.exists("logs"):
@@ -58,11 +59,15 @@ class Logger:
                 for oud_bestand in logbestanden[self.max_logfiles-1:]:
                     try:
                         os.remove(oud_bestand)
-                        print(f"Oud logbestand verwijderd: {oud_bestand}")
+                        # Verwijder print statement om terminal venster te voorkomen
                     except Exception as e:
-                        print(f"Kon oud logbestand niet verwijderen: {e}")
+                        # Log naar bestand in plaats van naar console
+                        with open(self.logBestandsnaam, 'a', encoding='utf-8') as bestand:
+                            bestand.write(f"Kon oud logbestand niet verwijderen: {e}\n")
         except Exception as e:
-            print(f"Fout bij opruimen oude logbestanden: {e}")
+            # Log naar bestand in plaats van naar console
+            with open(self.logBestandsnaam, 'a', encoding='utf-8') as bestand:
+                bestand.write(f"Fout bij opruimen oude logbestanden: {e}\n")
     
     def _formateerBericht(self, berichtType, bericht):
         """
@@ -102,7 +107,8 @@ class Logger:
             with open(self.logBestandsnaam, 'a', encoding='utf-8') as bestand:
                 bestand.write(self._formateerBericht(berichtType, bericht) + "\n")
         except Exception as e:
-            print(f"Kon niet naar logbestand schrijven: {e}")
+            # Verwijder print statement om terminal venster te voorkomen
+            pass
     
     def logInfo(self, bericht):
         """Log een informatiebericht"""
@@ -139,7 +145,7 @@ class Logger:
                 alleRegels = bestand.readlines()
                 return alleRegels[-aantalRegels:] if len(alleRegels) > aantalRegels else alleRegels
         except Exception as e:
-            print(f"Kon logbestand niet lezen: {e}")
+            # Verwijder print statement om terminal venster te voorkomen
             return []
 
 # Singleton instance voor gebruik in de hele applicatie

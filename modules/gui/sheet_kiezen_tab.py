@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 
 from assets.theme import KLEUREN, STIJLEN
-from modules.gui.components import Tooltip
+from modules.gui.components import Tooltip, StijlvollePopup
 from modules.settings import instellingen
 from modules.excel_handler import excelHandler
 

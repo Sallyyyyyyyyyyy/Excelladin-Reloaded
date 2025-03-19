@@ -1,0 +1,494 @@
+# PROMPT: UITGEBREIDE EXCELLADIN RENTPRO INTEGRATIE MET PUPPETEER
+
+## Projectomschrijving
+Implementeer een volledige RentPro-integratie in Excelladin Reloaded voor het Acties-tabblad. Deze integratie moet excel-data kunnen synchroniseren met RentPro, data uit RentPro kunnen inlezen, en RentPro kunnen automatiseren voor data-invoer. Gebruik de bestaande scripts in de 'turboturbo' subfolder als referentiepunt.
+
+## 1. Architectuur Aanpassingen
+
+### Nieuwe Modules
+- Maak `modules/actions/rentpro.py` voor alle RentPro interacties
+- Maak `modules/actions/rentpro_inlezen.py` voor specifieke inlees-acties
+- Maak `modules/actions/rentpro_upload.py` voor specifieke upload-acties
+
+### Bestaande Modules Aanpassen
+- Breid `modules/actions.py` uit met:
+  * `categorie` attribuut voor ActieBasis class
+  * Importeren van alle RentPro-acties
+  * Registratie in BESCHIKBARE_ACTIES
+- Pas `modules/gui/acties_tab.py` aan om categorieën te ondersteunen
+
+### Configuratie
+- Maak een `config/rentpro.ini` bestand voor instellingen
+- Implementeer inloggegevens opslag in plaintext (voor simpliciteit)
+- Voeg configuratie-opties toe voor browser-instellingen
+
+## 2. RentProConnector Class
+
+### Basisimplementatie
+```python
+class RentProConnector:
+    """RentPro connector via Puppeteer"""
+    
+    def __init__(self, app=None):
+        """
+        Initialiseer de RentPro connector
+        
+        Args:
+            app: Optioneel, de hoofdapplicatie voor status updates
+        """
+        self.app = app
+        self.browser = None
+        self.page = None
+        self.is_verbonden = False
+        self.credentials = self.laad_credentials()
+```
+
+### Essentiële Methoden
+1. `laad_credentials()`: Laad inloggegevens uit config bestand
+2. `verbind()`: Start browser en log in bij RentPro
+3. `navigeer_naar_producten()`: Ga naar productpagina
+4. `navigeer_naar_nieuw_product()`: Ga naar pagina voor nieuw product
+5. `vul_product_veld(veld_id, waarde)`: Vul een specifiek veld
+6. `klik_opslaan()`: Klik op de opslaan knop
+7. `lees_product_data(product_id)`: Haal productgegevens op
+8. `sluit()`: Sluit de browser
+
+### Asyncio Integratie
+- Implementeer een `run_async()` hulpfunctie:
+```python
+def run_async(coroutine):
+    """Voer een coroutine asynchroon uit vanuit tkinter"""
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(coroutine)
+```
+
+## 3. Categorieën & UI Aanpassingen
+
+### Categoriestructuur
+- "Inlezen vanuit RentPro": Acties voor het ophalen van data
+- "Lokale sheet bijwerken": Acties voor Excel-manipulatie 
+- "Uploaden naar RentPro": Acties voor het uploaden van data
+
+### UI Aanpassingen in ActiesTab
+```python
+def _buildCategorieTabbladen(self):
+    """Bouw tabbladen voor actiecategorieën"""
+    self.categorieTabs = ttk.Notebook(self.container)
+    self.categorieTabs.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+    
+    # Frames voor categorieën
+    self.categorieFrames = {}
+    for categorie in ["Inlezen vanuit RentPro", "Lokale sheet bijwerken", "Uploaden naar RentPro", "Algemeen"]:
+        frame = tk.Frame(
+            self.categorieTabs,
+            background=KLEUREN["achtergrond"],
+            padx=10, pady=10
+        )
+        
+        # Actieknoppen bovenaan categorie
+        buttonFrame = tk.Frame(frame, background=KLEUREN["achtergrond"])
+        buttonFrame.pack(fill=tk.X, pady=5)
+        
+        selectAllBtn = tk.Button(
+            buttonFrame, 
+            text="Selecteer alles", 
+            command=lambda c=categorie: self.selecteerAlleActies(c, True),
+            bg="#000080",  # Donkerblauw
+            fg="#FFFF00",  # Fel geel
+            font=("Arial", 10)
+        )
+        selectAllBtn.pack(side=tk.LEFT, padx=5)
+        Tooltip(selectAllBtn, f"Selecteer alle acties in de categorie '{categorie}'")
+        
+        deselectAllBtn = tk.Button(
+            buttonFrame, 
+            text="Deselecteer alles",
+            command=lambda c=categorie: self.selecteerAlleActies(c, False),
+            bg="#000080",  # Donkerblauw
+            fg="#FFFF00",  # Fel geel
+            font=("Arial", 10)
+        )
+        deselectAllBtn.pack(side=tk.LEFT, padx=5)
+        Tooltip(deselectAllBtn, f"Deselecteer alle acties in de categorie '{categorie}'")
+        
+        # Scroll container voor acties
+        actieScrollFrame = tk.Frame(
+            frame,
+            background=KLEUREN["achtergrond"]
+        )
+        actieScrollFrame.pack(fill=tk.BOTH, expand=True)
+        
+        # Scrollbar
+        scrollbar = tk.Scrollbar(actieScrollFrame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Canvas voor scrollbare inhoud
+        actieCanvas = tk.Canvas(
+            actieScrollFrame,
+            background=KLEUREN["achtergrond"],
+            yscrollcommand=scrollbar.set,
+            highlightthickness=0
+        )
+        actieCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=actieCanvas.yview)
+        
+        # Frame voor acties in canvas
+        actieListFrame = tk.Frame(
+            actieCanvas,
+            background=KLEUREN["achtergrond"]
+        )
+        
+        # Canvas window
+        actieCanvasWindow = actieCanvas.create_window(
+            (0, 0),
+            window=actieListFrame,
+            anchor="nw",
+            width=350  # Breedte minus scrollbar
+        )
+        
+        # Configuratie voor scrolling
+        actieListFrame.bind("<Configure>", 
+                          lambda event, canvas=actieCanvas: canvas.configure(
+                              scrollregion=canvas.bbox("all")
+                          ))
+        actieCanvas.bind("<Configure>", 
+                       lambda event, canvas=actieCanvas, win=actieCanvasWindow: 
+                       canvas.itemconfig(win, width=event.width))
+        
+        # Sla referenties op voor later gebruik
+        self.categorieFrames[categorie] = {
+            'frame': frame,
+            'actieListFrame': actieListFrame,
+            'actieCanvas': actieCanvas,
+            'scrollbar': scrollbar
+        }
+        
+        # Voeg toe aan tabblad
+        self.categorieTabs.add(frame, text=categorie)
+```
+
+### Selectiefunctionaliteit
+```python
+def selecteerAlleActies(self, categorie, select=True):
+    """Selecteer of deselecteer alle acties in een categorie"""
+    if categorie not in self.categorieFrames:
+        return
+    
+    actieListFrame = self.categorieFrames[categorie]['actieListFrame']
+    for widget in actieListFrame.winfo_children():
+        if hasattr(widget, 'checkVar'):
+            widget.checkVar.set(select)
+```
+
+## 4. Excel Integratie
+
+### Veldmapping Functionaliteit
+```python
+def lees_veld_mappings(self):
+    """Leest de eerste twee rijen van de Excel sheet voor veldnaam/ID mappings"""
+    if not excelHandler.isBestandGeopend():
+        raise ValueError("Geen Excel-bestand geopend")
+        
+    # Lees alle kolommen in eerste rij (veldnamen)
+    veldnamen = []
+    veld_ids = []
+    
+    for kolom in excelHandler.kolomNamen:
+        namen = excelHandler.haalKolomOp(kolom, (0, 0))
+        ids = excelHandler.haalKolomOp(kolom, (1, 1))
+        
+        if namen and ids:
+            veldnamen.append(namen[0])
+            veld_ids.append(ids[0])
+    
+    # Maak mapping dictionary
+    mappings = {}
+    for i, naam in enumerate(veldnamen):
+        if i < len(veld_ids) and naam and veld_ids[i]:
+            mappings[naam] = veld_ids[i]
+    
+    return mappings
+```
+
+### Data Synchronisatie
+Voor elke rij de volgende stappen implementeren:
+1. Lees data uit Excel
+2. Valideer data waar nodig
+3. Gebruik veldmappings om te bepalen welke Puppeteer-acties uitgevoerd moeten worden
+4. Voer acties uit en verwerk resultaten terug naar Excel indien nodig
+
+## 5. Actie Implementaties
+
+### RentProInlezenActie
+```python
+class RentProInlezenActie(ActieBasis):
+    """Actie om product data in te lezen vanuit RentPro"""
+    
+    def __init__(self):
+        """Initialiseer de RentPro inlezen actie"""
+        super().__init__(
+            naam="rentProInlezen",
+            beschrijving="Haalt productdata op van RentPro en importeert in Excel",
+            categorie="Inlezen vanuit RentPro"
+        )
+    
+    def voerUit(self, parameters, rijen=None):
+        """Implementatie van de actie"""
+        try:
+            # Controleer parameters, verbind met RentPro, haal data op...
+            # Implementeer stapsgewijs met voortgangsindicatie
+            
+            return ActieResultaat(True, "Product data succesvol ingelezen")
+        except Exception as e:
+            logger.logFout(f"Fout bij uitvoeren RentProInlezenActie: {e}")
+            return ActieResultaat(False, f"Fout bij uitvoeren actie: {e}")
+```
+
+### RentProUploadActie
+Implementeer een actie die:
+1. Verbindt met RentPro
+2. Navigeert naar de juiste pagina's
+3. Vult formulieren in op basis van Excel-data en veldmappings
+4. Klikt op knoppen voor opslaan
+5. Verifieert succesvol opslaan
+6. Verwerkt meerdere rijen afhankelijk van bereik-selectie
+
+### LocaleSheetActie
+Implementeer een actie die:
+1. Lokale berekeningen uitvoert op Excel-data
+2. Validaties uitvoert
+3. Data normaliseert of transformeert
+4. Werkt met de geselecteerde rijen (alle/bereik/specifiek)
+
+## 6. Voortgangsindicatie & Foutafhandeling
+
+### Voortgangsindicatie
+```python
+def updateVoortgang(self, percentage, bericht):
+    """Update de voortgangsindicatie"""
+    if hasattr(self, 'voortgangBar'):
+        self.voortgangBar['value'] = percentage
+    
+    if self.app:
+        self.app.updateStatus(f"{bericht} ({percentage:.1f}%)")
+        self.app.root.update_idletasks()
+```
+
+### Foutafhandeling
+- Implementeer try/except blokken in alle kritieke methoden
+- Log fouten uitgebreid met logger.logFout()
+- Toon gebruiksvriendelijke foutmeldingen
+- Zorg voor graceful afhandeling van browser crashes
+
+## 7. Integratie met Bestaande Functionaliteit
+
+### ActieBasis Uitbreiding
+```python
+class ActieBasis:
+    """Basis klasse voor alle acties"""
+    
+    def __init__(self, naam, beschrijving, categorie="Algemeen"):
+        """
+        Initialiseer een actie
+        
+        Args:
+            naam (str): Naam van de actie
+            beschrijving (str): Beschrijving van de actie
+            categorie (str): Categorie van de actie (nieuw)
+        """
+        self.naam = naam
+        self.beschrijving = beschrijving
+        self.categorie = categorie
+```
+
+### ActiesTab._voegActiesToe() Aanpassing
+Pas deze methode aan om rekening te houden met categorieën:
+```python
+def _voegActiesToe(self):
+    """Voeg beschikbare acties toe aan de actielijst, gegroepeerd per categorie"""
+    # Initialiseer lege groepen
+    actie_groepen = {}
+    
+    # Groepeer acties per categorie
+    for actieNaam, actie in BESCHIKBARE_ACTIES.items():
+        categorie = actie.categorie
+        if categorie not in actie_groepen:
+            actie_groepen[categorie] = []
+        actie_groepen[categorie].append((actieNaam, actie))
+    
+    # Voor elke categorie, voeg acties toe aan het juiste frame
+    for categorie, acties in actie_groepen.items():
+        if categorie not in self.categorieFrames:
+            continue
+            
+        actieListFrame = self.categorieFrames[categorie]['actieListFrame']
+        
+        for actieNaam, actie in acties:
+            # Maak actie-frame
+            actieFrame = tk.Frame(
+                actieListFrame,
+                background=KLEUREN["achtergrond"],
+                padx=5, pady=5,
+                relief=tk.GROOVE,
+                borderwidth=1
+            )
+            actieFrame.pack(fill=tk.X, pady=2)
+            
+            # Selectie checkbox
+            checkVar = tk.BooleanVar(value=False)
+            checkBox = ttk.Checkbutton(
+                actieFrame,
+                text=f"{actie.naam}",
+                variable=checkVar
+            )
+            checkBox.pack(side=tk.LEFT)
+            
+            # Hover tooltip met beschrijving
+            Tooltip(checkBox, actie.beschrijving)
+            
+            # Uitvoerknop
+            uitvoerBtn = ttk.Button(
+                actieFrame,
+                text="Uitvoeren",
+                command=lambda a=actieNaam: self.voerActieUit(a)
+            )
+            uitvoerBtn.pack(side=tk.RIGHT)
+            Tooltip(uitvoerBtn, f"Voer actie '{actie.naam}' direct uit")
+            
+            # Informatie label
+            infoLabel = tk.Label(
+                actieFrame,
+                text=actie.beschrijving[:40] + "..." if len(actie.beschrijving) > 40 else actie.beschrijving,
+                **STIJLEN["label"],
+                anchor=tk.W
+            )
+            infoLabel.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+            
+            # Bewaar referenties
+            actieFrame.checkVar = checkVar
+            actieFrame.uitvoerBtn = uitvoerBtn
+            actieFrame.actieNaam = actieNaam
+            actieFrame.actieType = actie.__class__.__name__
+```
+
+## 8. Puppeteer-specifieke Implementatie
+
+### Browser Setup
+```python
+async def _setup_browser(self):
+    """Setup Puppeteer browser"""
+    self.browser = await launch({
+        'headless': False,
+        'args': [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--window-size=1600,900',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu'
+        ]
+    })
+    self.page = await self.browser.newPage()
+    
+    # Event handlers
+    self.page.on('dialog', lambda dialog: asyncio.ensure_future(self._handle_dialog(dialog)))
+    self.page.on('error', lambda err: logger.logFout(f"Browser error: {err}"))
+    
+    # Set viewport
+    await self.page.setViewport({'width': 1280, 'height': 800})
+    
+    return self.page
+```
+
+### Formulier Invullen Functies
+```python
+async def _vul_formulier_in(self, veld_mappings, data):
+    """Vul een formulier in met de gegeven data en veldmappings"""
+    for veldnaam, waarde in data.items():
+        if veldnaam in veld_mappings and veld_mappings[veldnaam]:
+            veld_id = veld_mappings[veldnaam]
+            
+            # Skip lege waarden
+            if waarde is None or (isinstance(waarde, str) and not waarde.strip()):
+                continue
+                
+            # Detecteer veldtype
+            element_handle = await self.page.querySelector(f'#{veld_id}')
+            if not element_handle:
+                logger.logWaarschuwing(f"Veld met ID '{veld_id}' niet gevonden")
+                continue
+                
+            tag_name = await self.page.evaluate('el => el.tagName.toLowerCase()', element_handle)
+            
+            # Afhandeling per veldtype
+            if tag_name == 'input':
+                input_type = await self.page.evaluate('el => el.type', element_handle)
+                
+                if input_type == 'checkbox':
+                    if waarde in [True, 'true', 'True', '1', 1, 'yes', 'Yes', 'Y', 'y']:
+                        # Controleer huidige status
+                        is_checked = await self.page.evaluate('el => el.checked', element_handle)
+                        if not is_checked:
+                            await element_handle.click()
+                    else:
+                        is_checked = await self.page.evaluate('el => el.checked', element_handle)
+                        if is_checked:
+                            await element_handle.click()
+                            
+                elif input_type == 'radio':
+                    # Radiobuttons vereisen speciale afhandeling
+                    radio_value = str(waarde)
+                    radio_selector = f'input[name="{veld_id}"][value="{radio_value}"]'
+                    await self.page.click(radio_selector)
+                    
+                else:
+                    # Tekstvelden
+                    await element_handle.click({
+                        'clickCount': 3  # Selecteert alle tekst
+                    })
+                    await element_handle.type(str(waarde))
+                    
+            elif tag_name == 'select':
+                # Dropdown menu
+                option_value = str(waarde)
+                await self.page.select(f'#{veld_id}', option_value)
+                
+            elif tag_name == 'textarea':
+                # Tekstvak
+                await element_handle.click({
+                    'clickCount': 3  # Selecteert alle tekst
+                })
+                await element_handle.type(str(waarde))
+```
+
+## 9. Toekomstbestendigheid & Uitbreidingen
+
+### Configuratie Opties
+Voeg configuratie-opties toe voor:
+- Browser instellingen (headless/niet-headless)
+- Timeout waarden
+- Retry pogingen
+- Log detailniveau
+
+### Modulariteit
+- Ontwerp voor uitbreidbaarheid - maak het eenvoudig om nieuwe acties toe te voegen
+- Splits functionaliteit in logische modules
+- Gebruik interfaces en abstractie waar nuttig
+
+### Caching & Performance
+- Cache RentPro sessies waar mogelijk
+- Hergebruik verbindingen voor meerdere acties
+- Implementeer batch-verwerking voor grote datasets
+
+## 10. Installatie Vereisten
+Voeg de benodigde packages toe:
+```
+pyppeteer==1.0.2
+asyncio==3.4.3
+```
+
+## 11. Documentatie
+Voeg uitgebreide docstrings toe voor alle nieuwe classes en methoden, met voorbeelden van gebruik en parameters beschrijvingen.
+
+Voor eindgebruikers, maak een handleiding over:
+- Hoe de inlees-mappings op te zetten in Excel (eerste twee rijen)

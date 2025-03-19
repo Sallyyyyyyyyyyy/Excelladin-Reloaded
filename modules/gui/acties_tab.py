@@ -2,10 +2,10 @@
 Acties tabblad voor Excelladin Reloaded
 """
 import tkinter as tk
-from tkinter import ttk, simpledialog, messagebox
+from tkinter import ttk, simpledialog
 
 from assets.theme import KLEUREN, STIJLEN
-from modules.gui.components import Tooltip
+from modules.gui.components import Tooltip, StijlvollePopup
 from modules.excel_handler import excelHandler
 from modules.actions import BESCHIKBARE_ACTIES, voerActieUit
 from modules.workflow import workflowManager
@@ -24,6 +24,7 @@ class ActiesTab:
         """
         self.parent = parent
         self.app = app
+        self.categorieFrames = {}
         
         # Bouw de UI
         self._buildUI()
@@ -31,17 +32,17 @@ class ActiesTab:
     def _buildUI(self):
         """Bouw de UI van het Acties tabblad"""
         # Hoofdcontainer met padding
-        container = tk.Frame(
+        self.container = tk.Frame(
             self.parent,
             background=KLEUREN["achtergrond"],
             padx=20,
             pady=20
         )
-        container.pack(fill=tk.BOTH, expand=True)
+        self.container.pack(fill=tk.BOTH, expand=True)
         
         # Label met instructie
         instructieLabel = tk.Label(
-            container,
+            self.container,
             text="Selecteer acties om uit te voeren op het Excel-bestand",
             **STIJLEN["label"],
             pady=10
@@ -50,7 +51,7 @@ class ActiesTab:
         
         # Bereik selectie frame
         bereikFrame = tk.Frame(
-            container,
+            self.container,
             background=KLEUREN["achtergrond"],
             padx=10,
             pady=10
@@ -67,20 +68,30 @@ class ActiesTab:
         # Bereik opties
         self.bereikVar = tk.StringVar(value="alles")
         
-        allesRadio = ttk.Radiobutton(
+        allesRadio = tk.Radiobutton(
             bereikFrame,
             text="Alles",
             variable=self.bereikVar,
-            value="alles"
+            value="alles",
+            background=KLEUREN["achtergrond"],
+            foreground="#FFFFFF",  # Witte tekst voor betere zichtbaarheid
+            selectcolor="#b01345",  # Duidelijke selectiekleur
+            activebackground=KLEUREN["achtergrond"],
+            activeforeground="#FFFFFF"
         )
         allesRadio.pack(side=tk.LEFT, padx=5)
         Tooltip(allesRadio, "Voer acties uit op alle rijen")
         
-        enkelRadio = ttk.Radiobutton(
+        enkelRadio = tk.Radiobutton(
             bereikFrame,
             text="Rij:",
             variable=self.bereikVar,
-            value="enkel"
+            value="enkel",
+            background=KLEUREN["achtergrond"],
+            foreground="#FFFFFF",  # Witte tekst voor betere zichtbaarheid
+            selectcolor="#b01345",  # Duidelijke selectiekleur
+            activebackground=KLEUREN["achtergrond"],
+            activeforeground="#FFFFFF"
         )
         enkelRadio.pack(side=tk.LEFT, padx=5)
         Tooltip(enkelRadio, "Voer acties uit op één specifieke rij")
@@ -95,11 +106,16 @@ class ActiesTab:
         )
         enkelRijEntry.pack(side=tk.LEFT)
         
-        bereikRadio = ttk.Radiobutton(
+        bereikRadio = tk.Radiobutton(
             bereikFrame,
             text="Bereik:",
             variable=self.bereikVar,
-            value="bereik"
+            value="bereik",
+            background=KLEUREN["achtergrond"],
+            foreground="#FFFFFF",  # Witte tekst voor betere zichtbaarheid
+            selectcolor="#b01345",  # Duidelijke selectiekleur
+            activebackground=KLEUREN["achtergrond"],
+            activeforeground="#FFFFFF"
         )
         bereikRadio.pack(side=tk.LEFT, padx=5)
         Tooltip(bereikRadio, "Voer acties uit op een bereik van rijen")
@@ -130,93 +146,162 @@ class ActiesTab:
         )
         totRijEntry.pack(side=tk.LEFT)
         
-        # Actielijst label
-        actielijstLabel = tk.Label(
-            container,
-            text="Beschikbare Acties:",
-            **STIJLEN["label"],
-            anchor=tk.W,
-            pady=5
-        )
-        actielijstLabel.pack(fill=tk.X, pady=(10, 0))
-        
-        # Scroll container voor acties
-        actieScrollFrame = tk.Frame(
-            container,
-            background=KLEUREN["achtergrond"]
-        )
-        actieScrollFrame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
-        
-        # Scrollbar
-        scrollbar = tk.Scrollbar(actieScrollFrame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Canvas voor scrollbare inhoud
-        self.actieCanvas = tk.Canvas(
-            actieScrollFrame,
-            background=KLEUREN["achtergrond"],
-            yscrollcommand=scrollbar.set,
-            highlightthickness=0
-        )
-        self.actieCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        scrollbar.config(command=self.actieCanvas.yview)
-        
-        # Frame voor acties in canvas
-        self.actieListFrame = tk.Frame(
-            self.actieCanvas,
-            background=KLEUREN["achtergrond"]
-        )
-        
-        # Canvas window
-        self.actieCanvasWindow = self.actieCanvas.create_window(
-            (0, 0),
-            window=self.actieListFrame,
-            anchor="nw",
-            width=350  # Breedte van de canvas minus scrollbar
-        )
-        
-        # Configureer canvas om mee te schalen met frame
-        self.actieListFrame.bind("<Configure>", self._configureActieCanvas)
-        self.actieCanvas.bind("<Configure>", self._onCanvasResize)
+        # Bouw categorietabbladen
+        self._buildCategorieTabbladen()
         
         # Uitvoerknop
         self.uitvoerButton = ttk.Button(
-            container,
+            self.container,
             text="Voer Geselecteerde Acties Uit",
             command=self.voerGeselecteerdeActiesUit
         )
         self.uitvoerButton.pack(fill=tk.X, pady=10)
         Tooltip(self.uitvoerButton, "Voer alle geselecteerde acties uit in volgorde")
     
-    def _configureActieCanvas(self, event):
-        """Pas de canvas grootte aan aan het actieListFrame"""
-        # Update het scrollgebied naar het nieuwe formaat van het actieListFrame
-        self.actieCanvas.configure(scrollregion=self.actieCanvas.bbox("all"))
+    def _buildCategorieTabbladen(self):
+        """Bouw tabbladen voor actiecategorieën"""
+        self.categorieTabs = ttk.Notebook(self.container)
+        self.categorieTabs.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+        
+        # Frames voor categorieën
+        self.categorieFrames = {}
+        for categorie in ["Inlezen vanuit RentPro", "Lokale sheet bijwerken", "Uploaden naar RentPro", "Algemeen"]:
+            frame = tk.Frame(
+                self.categorieTabs,
+                background=KLEUREN["achtergrond"],
+                padx=10, pady=10
+            )
+            
+            # Actieknoppen bovenaan categorie
+            buttonFrame = tk.Frame(frame, background=KLEUREN["achtergrond"])
+            buttonFrame.pack(fill=tk.X, pady=5)
+            
+            selectAllBtn = tk.Button(
+                buttonFrame, 
+                text="Selecteer alles", 
+                command=lambda c=categorie: self.selecteerAlleActies(c, True),
+                bg="#000080",  # Donkerblauw
+                fg="#FFFF00",  # Fel geel
+                font=("Arial", 10)
+            )
+            selectAllBtn.pack(side=tk.LEFT, padx=5)
+            Tooltip(selectAllBtn, f"Selecteer alle acties in de categorie '{categorie}'")
+            
+            deselectAllBtn = tk.Button(
+                buttonFrame, 
+                text="Deselecteer alles",
+                command=lambda c=categorie: self.selecteerAlleActies(c, False),
+                bg="#000080",  # Donkerblauw
+                fg="#FFFF00",  # Fel geel
+                font=("Arial", 10)
+            )
+            deselectAllBtn.pack(side=tk.LEFT, padx=5)
+            Tooltip(deselectAllBtn, f"Deselecteer alle acties in de categorie '{categorie}'")
+            
+            # Scroll container voor acties
+            actieScrollFrame = tk.Frame(
+                frame,
+                background=KLEUREN["achtergrond"]
+            )
+            actieScrollFrame.pack(fill=tk.BOTH, expand=True)
+            
+            # Scrollbar
+            scrollbar = tk.Scrollbar(actieScrollFrame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            
+            # Canvas voor scrollbare inhoud
+            actieCanvas = tk.Canvas(
+                actieScrollFrame,
+                background=KLEUREN["achtergrond"],
+                yscrollcommand=scrollbar.set,
+                highlightthickness=0
+            )
+            actieCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.config(command=actieCanvas.yview)
+            
+            # Frame voor acties in canvas
+            actieListFrame = tk.Frame(
+                actieCanvas,
+                background=KLEUREN["achtergrond"]
+            )
+            
+            # Canvas window
+            actieCanvasWindow = actieCanvas.create_window(
+                (0, 0),
+                window=actieListFrame,
+                anchor="nw",
+                width=350  # Breedte minus scrollbar
+            )
+            
+            # Configuratie voor scrolling
+            actieListFrame.bind("<Configure>", 
+                              lambda event, canvas=actieCanvas: canvas.configure(
+                                  scrollregion=canvas.bbox("all")
+                              ))
+            actieCanvas.bind("<Configure>", 
+                           lambda event, canvas=actieCanvas, win=actieCanvasWindow: 
+                           canvas.itemconfig(win, width=event.width))
+            
+            # Sla referenties op voor later gebruik
+            self.categorieFrames[categorie] = {
+                'frame': frame,
+                'actieListFrame': actieListFrame,
+                'actieCanvas': actieCanvas,
+                'scrollbar': scrollbar
+            }
+            
+            # Voeg toe aan tabblad
+            self.categorieTabs.add(frame, text=categorie)
     
-    def _onCanvasResize(self, event):
-        """Pas de breedte van het actieListFrame aan"""
-        # Pas de breedte van het window aan aan de canvas
-        self.actieCanvas.itemconfig(self.actieCanvasWindow, width=event.width)
+    def selecteerAlleActies(self, categorie, select=True):
+        """
+        Selecteer of deselecteer alle acties in een categorie
+        
+        Args:
+            categorie (str): De categorie waarvan alle acties geselecteerd/gedeselecteerd moeten worden
+            select (bool): True om te selecteren, False om te deselecteren
+        """
+        if categorie not in self.categorieFrames:
+            return
+        
+        actieListFrame = self.categorieFrames[categorie]['actieListFrame']
+        for widget in actieListFrame.winfo_children():
+            if hasattr(widget, 'checkVar'):
+                widget.checkVar.set(select)
     
     def updateNaLaden(self):
         """Update de actielijst na het laden van een Excel-bestand"""
         self._voegActiesToe()
     
     def _voegActiesToe(self):
-        """Voeg beschikbare acties toe aan de actielijst"""
-        # Verwijder bestaande actieframes
-        for widget in self.actieListFrame.winfo_children():
-            widget.destroy()
+        """Voeg beschikbare acties toe aan de actielijst, gegroepeerd per categorie"""
+        # Initialiseer lege groepen
+        actie_groepen = {}
         
-        # Voeg kolomvullen actie toe voor elke kolom als er een Excel-bestand is geladen
-        if excelHandler.isBestandGeopend():
-            for kolomNaam in excelHandler.kolomNamen:
+        # Groepeer acties per categorie
+        for actieNaam, actie in BESCHIKBARE_ACTIES.items():
+            categorie = actie.categorie
+            if categorie not in actie_groepen:
+                actie_groepen[categorie] = []
+            actie_groepen[categorie].append((actieNaam, actie))
+        
+        # Voor elke categorie, voeg acties toe aan het juiste frame
+        for categorie, acties in actie_groepen.items():
+            if categorie not in self.categorieFrames:
+                continue
+                
+            actieListFrame = self.categorieFrames[categorie]['actieListFrame']
+            
+            # Verwijder bestaande actieframes
+            for widget in actieListFrame.winfo_children():
+                widget.destroy()
+            
+            for actieNaam, actie in acties:
+                # Maak actie-frame
                 actieFrame = tk.Frame(
-                    self.actieListFrame,
+                    actieListFrame,
                     background=KLEUREN["achtergrond"],
-                    padx=5,
-                    pady=5,
+                    padx=5, pady=5,
                     relief=tk.GROOVE,
                     borderwidth=1
                 )
@@ -226,25 +311,77 @@ class ActiesTab:
                 checkVar = tk.BooleanVar(value=False)
                 checkBox = ttk.Checkbutton(
                     actieFrame,
-                    text=f"{kolomNaam} vullen",
+                    text=f"{actie.naam}",
                     variable=checkVar
                 )
                 checkBox.pack(side=tk.LEFT)
                 
-                # Uitvoerknop voor deze actie
+                # Hover tooltip met beschrijving
+                Tooltip(checkBox, actie.beschrijving)
+                
+                # Uitvoerknop
                 uitvoerBtn = ttk.Button(
                     actieFrame,
                     text="Uitvoeren",
-                    command=lambda k=kolomNaam: self.voerKolomVullenActieUit(k)
+                    command=lambda a=actieNaam: self.voerActieUit(a)
                 )
                 uitvoerBtn.pack(side=tk.RIGHT)
-                Tooltip(uitvoerBtn, f"Vul kolom '{kolomNaam}' met gecombineerde data uit andere kolommen")
+                Tooltip(uitvoerBtn, f"Voer actie '{actie.naam}' direct uit")
                 
-                # Bewaar de variabelen en widgets voor later gebruik
+                # Informatie label
+                infoLabel = tk.Label(
+                    actieFrame,
+                    text=actie.beschrijving[:40] + "..." if len(actie.beschrijving) > 40 else actie.beschrijving,
+                    **STIJLEN["label"],
+                    anchor=tk.W
+                )
+                infoLabel.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+                
+                # Bewaar referenties
                 actieFrame.checkVar = checkVar
                 actieFrame.uitvoerBtn = uitvoerBtn
-                actieFrame.kolomNaam = kolomNaam
-                actieFrame.actieType = "kolomVullen"
+                actieFrame.actieNaam = actieNaam
+                actieFrame.actieType = actie.__class__.__name__
+        
+        # Voeg kolomvullen actie toe voor elke kolom als er een Excel-bestand is geladen
+        if excelHandler.isBestandGeopend():
+            categorie = "Lokale sheet bijwerken"
+            if categorie in self.categorieFrames:
+                actieListFrame = self.categorieFrames[categorie]['actieListFrame']
+                
+                for kolomNaam in excelHandler.kolomNamen:
+                    actieFrame = tk.Frame(
+                        actieListFrame,
+                        background=KLEUREN["achtergrond"],
+                        padx=5, pady=5,
+                        relief=tk.GROOVE,
+                        borderwidth=1
+                    )
+                    actieFrame.pack(fill=tk.X, pady=2)
+                    
+                    # Selectie checkbox
+                    checkVar = tk.BooleanVar(value=False)
+                    checkBox = ttk.Checkbutton(
+                        actieFrame,
+                        text=f"{kolomNaam} vullen",
+                        variable=checkVar
+                    )
+                    checkBox.pack(side=tk.LEFT)
+                    
+                    # Uitvoerknop voor deze actie
+                    uitvoerBtn = ttk.Button(
+                        actieFrame,
+                        text="Uitvoeren",
+                        command=lambda k=kolomNaam: self.voerKolomVullenActieUit(k)
+                    )
+                    uitvoerBtn.pack(side=tk.RIGHT)
+                    Tooltip(uitvoerBtn, f"Vul kolom '{kolomNaam}' met gecombineerde data uit andere kolommen")
+                    
+                    # Bewaar de variabelen en widgets voor later gebruik
+                    actieFrame.checkVar = checkVar
+                    actieFrame.uitvoerBtn = uitvoerBtn
+                    actieFrame.kolomNaam = kolomNaam
+                    actieFrame.actieType = "kolomVullen"
     
     def haalGeselecteerdBereik(self):
         """
@@ -268,6 +405,127 @@ class ActiesTab:
         except ValueError:
             self.app.toonFoutmelding("Fout", "Ongeldige rijwaarden. Gebruik gehele getallen.")
             return None
+    
+    def voerActieUit(self, actieNaam):
+        """
+        Voer een actie uit op basis van naam
+        
+        Args:
+            actieNaam (str): Naam van de actie om uit te voeren
+        """
+        if not excelHandler.isBestandGeopend():
+            self.app.toonFoutmelding("Fout", "Geen Excel-bestand geopend")
+            return
+        
+        actie = BESCHIKBARE_ACTIES.get(actieNaam)
+        if not actie:
+            self.app.toonFoutmelding("Fout", f"Actie '{actieNaam}' bestaat niet")
+            return
+        
+        # Vraag om parameters op basis van actie type
+        parameters = self._vraagActieParameters(actie)
+        if not parameters:
+            return
+        
+        # Bepaal bereik
+        bereik = self.haalGeselecteerdBereik()
+        
+        # Voer actie uit
+        self.app.updateStatus(f"Bezig met uitvoeren van actie '{actieNaam}'...")
+        resultaat = voerActieUit(actieNaam, parameters, bereik)
+        
+        if resultaat.succes:
+            self.app.updateStatus("Actie succesvol uitgevoerd")
+            self.app.toonSuccesmelding("Succes", resultaat.bericht)
+            # Vraag of gebruiker wil opslaan
+            popup = StijlvollePopup(
+                self.app.root,
+                "Opslaan",
+                "Wil je de wijzigingen opslaan in het Excel-bestand?",
+                popup_type="vraag",
+                actie_knoppen=[
+                    {'tekst': 'Ja', 'commando': lambda: popup.ja_actie(), 'primair': True},
+                    {'tekst': 'Nee', 'commando': lambda: popup.nee_actie()}
+                ]
+            )
+            if popup.wacht_op_antwoord() and excelHandler.slaOp():
+                self.app.updateStatus("Wijzigingen opgeslagen")
+        else:
+            self.app.updateStatus("Fout bij uitvoeren actie")
+            self.app.toonFoutmelding("Fout", resultaat.bericht)
+    
+    def _vraagActieParameters(self, actie):
+        """
+        Vraag parameters voor een actie op basis van het type
+        
+        Args:
+            actie: De actie waarvoor parameters gevraagd moeten worden
+            
+        Returns:
+            dict: Dictionary met parameters of None bij annuleren
+        """
+        # Implementeer hier de logica om parameters te vragen op basis van actie type
+        # Dit is een eenvoudige implementatie die uitgebreid kan worden
+        
+        if isinstance(actie, BESCHIKBARE_ACTIES["kolomVullen"].__class__):
+            # Vraag om bronkolommen en formaat
+            bronKolommen = self._toonKolomKeuzeDlg()
+            if not bronKolommen:
+                return None
+            
+            # Vraag om doelkolom
+            doelKolom = simpledialog.askstring(
+                "Doelkolom", 
+                "Geef de naam van de doelkolom op"
+            )
+            if not doelKolom:
+                return None
+            
+            # Vraag om formaat string
+            formaat = simpledialog.askstring(
+                "Formaat", 
+                "Geef het formaat op. Gebruik {kolomnaam} voor waarden uit kolommen.\nVoorbeeld: '{Voornaam} {Achternaam}'"
+            )
+            if not formaat:
+                return None
+            
+            return {
+                "doelKolom": doelKolom,
+                "bronKolommen": bronKolommen,
+                "formaat": formaat
+            }
+        
+        elif isinstance(actie, BESCHIKBARE_ACTIES["kolomSchoonmaken"].__class__):
+            # Vraag om kolom
+            kolom = simpledialog.askstring(
+                "Kolom", 
+                "Geef de naam van de kolom op die je wilt schoonmaken"
+            )
+            if not kolom:
+                return None
+            
+            # Vraag opties
+            verwijderSpaties = tk.messagebox.askyesno(
+                "Verwijder spaties", 
+                "Wil je extra spaties verwijderen?"
+            )
+            
+            verwijderLeestekens = tk.messagebox.askyesno(
+                "Verwijder leestekens", 
+                "Wil je leestekens verwijderen?"
+            )
+            
+            return {
+                "kolom": kolom,
+                "verwijderSpaties": verwijderSpaties,
+                "verwijderLeestekens": verwijderLeestekens
+            }
+        
+        # Voeg hier meer actie types toe
+        
+        # Standaard: vraag om parameters via dialoog
+        self.app.toonWaarschuwing("Niet geïmplementeerd", f"Parameters vragen voor actie '{actie.naam}' is nog niet geïmplementeerd")
+        return None
     
     def voerKolomVullenActieUit(self, kolomNaam):
         """
@@ -314,11 +572,17 @@ class ActiesTab:
             self.app.updateStatus("Kolom succesvol gevuld")
             self.app.toonSuccesmelding("Succes", resultaat.bericht)
             # Vraag of gebruiker wil opslaan
-            opslaan = messagebox.askyesno(
+            popup = StijlvollePopup(
+                self.app.root,
                 "Opslaan",
-                "Wil je de wijzigingen opslaan in het Excel-bestand?"
+                "Wil je de wijzigingen opslaan in het Excel-bestand?",
+                popup_type="vraag",
+                actie_knoppen=[
+                    {'tekst': 'Ja', 'commando': lambda: popup.ja_actie(), 'primair': True},
+                    {'tekst': 'Nee', 'commando': lambda: popup.nee_actie()}
+                ]
             )
-            if opslaan and excelHandler.slaOp():
+            if popup.wacht_op_antwoord() and excelHandler.slaOp():
                 self.app.updateStatus("Wijzigingen opgeslagen")
         else:
             self.app.updateStatus("Fout bij vullen kolom")
@@ -404,7 +668,7 @@ class ActiesTab:
         def bevestig():
             geselecteerd = [k for k, v in checkVars.items() if v.get()]
             if not geselecteerd:
-                messagebox.showwarning("Waarschuwing", "Selecteer ten minste één kolom")
+                self.app.toonWaarschuwing("Waarschuwing", "Selecteer ten minste één kolom")
                 return
             
             result["kolommen"] = geselecteerd
@@ -432,13 +696,18 @@ class ActiesTab:
             self.app.toonFoutmelding("Fout", "Geen Excel-bestand geopend")
             return
         
-        # Verzamel geselecteerde acties
+        # Verzamel geselecteerde acties uit alle categorieën
         geselecteerdeActies = []
         
-        for widget in self.actieListFrame.winfo_children():
-            if hasattr(widget, 'checkVar') and widget.checkVar.get():
-                if widget.actieType == "kolomVullen":
-                    geselecteerdeActies.append((widget.actieType, widget.kolomNaam))
+        for categorie, frames in self.categorieFrames.items():
+            actieListFrame = frames['actieListFrame']
+            
+            for widget in actieListFrame.winfo_children():
+                if hasattr(widget, 'checkVar') and widget.checkVar.get():
+                    if hasattr(widget, 'actieNaam'):
+                        geselecteerdeActies.append(widget.actieNaam)
+                    elif hasattr(widget, 'kolomNaam') and widget.actieType == "kolomVullen":
+                        geselecteerdeActies.append(("kolomVullen", widget.kolomNaam))
         
         if not geselecteerdeActies:
             self.app.toonFoutmelding("Fout", "Geen acties geselecteerd")
@@ -448,8 +717,11 @@ class ActiesTab:
         workflow = workflowManager.maakWorkflow("temp_workflow")
         
         # Doorloop geselecteerde acties en voeg ze toe aan de workflow
-        for actieType, kolomNaam in geselecteerdeActies:
-            if actieType == "kolomVullen":
+        for actie in geselecteerdeActies:
+            if isinstance(actie, tuple) and actie[0] == "kolomVullen":
+                # Speciale afhandeling voor kolomVullen acties
+                actieType, kolomNaam = actie
+                
                 # Vraag om bronkolommen en formaat
                 bronKolommen = self._toonKolomKeuzeDlg()
                 if not bronKolommen:
@@ -473,6 +745,22 @@ class ActiesTab:
                 
                 # Voeg toe aan workflow
                 workflow.voegActieToe(actieType, parameters)
+            else:
+                # Standaard acties
+                actieNaam = actie
+                actie_obj = BESCHIKBARE_ACTIES.get(actieNaam)
+                
+                if not actie_obj:
+                    self.app.toonWaarschuwing("Waarschuwing", f"Actie '{actieNaam}' bestaat niet")
+                    continue
+                
+                # Vraag parameters
+                parameters = self._vraagActieParameters(actie_obj)
+                if not parameters:
+                    continue
+                
+                # Voeg toe aan workflow
+                workflow.voegActieToe(actieNaam, parameters)
         
         if not workflow.acties:
             self.app.toonFoutmelding("Info", "Geen acties geconfigureerd")
@@ -494,12 +782,18 @@ class ActiesTab:
         
         if succes:
             # Vraag of gebruiker het resultaat wil opslaan
-            opslaan = messagebox.askyesno(
+            popup = StijlvollePopup(
+                self.app.root,
                 "Opslaan",
-                "Acties succesvol uitgevoerd. Wil je de wijzigingen opslaan?"
+                "Acties succesvol uitgevoerd. Wil je de wijzigingen opslaan?",
+                popup_type="vraag",
+                actie_knoppen=[
+                    {'tekst': 'Ja', 'commando': lambda: popup.ja_actie(), 'primair': True},
+                    {'tekst': 'Nee', 'commando': lambda: popup.nee_actie()}
+                ]
             )
             
-            if opslaan:
+            if popup.wacht_op_antwoord():
                 if excelHandler.slaOp():
                     self.app.updateStatus("Wijzigingen opgeslagen")
                     self.app.toonSuccesmelding("Succes", "Wijzigingen zijn opgeslagen")

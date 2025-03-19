@@ -4,7 +4,7 @@ Bevat de ExcelladinApp klasse die de basis vormt voor de GUI
 """
 import os
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 import tkinter.font as tkFont
 
 from modules.logger import logger
@@ -13,10 +13,11 @@ from modules.excel_handler import excelHandler
 
 from assets.theme import KLEUREN, FONTS, STIJLEN
 
-from modules.gui.components import Tooltip
+from modules.gui.components import Tooltip, StijlvollePopup
 from modules.gui.product_sheet_tab import ProductSheetTab
 from modules.gui.sheet_kiezen_tab import SheetKiezenTab
 from modules.gui.acties_tab import ActiesTab
+from modules.gui.rentpro_tab import RentproTab
 
 class ExcelladinApp:
     """
@@ -65,7 +66,17 @@ class ExcelladinApp:
     
     def bevestigAfsluiten(self):
         """Vraag om bevestiging voordat de applicatie wordt afgesloten"""
-        if messagebox.askyesno("Afsluiten", "Weet je zeker dat je Excelladin Reloaded wilt afsluiten?"):
+        popup = StijlvollePopup(
+            self.root,
+            "Afsluiten",
+            "Weet je zeker dat je Excelladin Reloaded wilt afsluiten?",
+            popup_type="vraag",
+            actie_knoppen=[
+                {'tekst': 'Ja', 'commando': lambda: popup.ja_actie(), 'primair': True},
+                {'tekst': 'Nee', 'commando': lambda: popup.nee_actie()}
+            ]
+        )
+        if popup.wacht_op_antwoord():
             self.root.destroy()
     
     def _configureerStijlen(self):
@@ -245,7 +256,7 @@ class ExcelladinApp:
             self.tabControl,
             background=KLEUREN["achtergrond"]
         )
-        self.tabControl.add(self.tabProductSheet, text="1 ProductSheet Aanmaken")
+        self.tabControl.add(self.tabProductSheet, text="ProductSheet")
         self.productSheetTab = ProductSheetTab(self.tabProductSheet, self)
         
         # Tabblad 2: Sheet Kiezen
@@ -253,7 +264,7 @@ class ExcelladinApp:
             self.tabControl,
             background=KLEUREN["achtergrond"]
         )
-        self.tabControl.add(self.tabSheetKiezen, text="2 Sheet Kiezen")
+        self.tabControl.add(self.tabSheetKiezen, text="Sheet Kiezen")
         self.sheetKiezenTab = SheetKiezenTab(self.tabSheetKiezen, self)
         
         # Tabblad 3: Acties
@@ -261,8 +272,16 @@ class ExcelladinApp:
             self.tabControl,
             background=KLEUREN["achtergrond"]
         )
-        self.tabControl.add(self.tabActies, text="3 Acties")
+        self.tabControl.add(self.tabActies, text="Acties")
         self.actiesTab = ActiesTab(self.tabActies, self)
+        
+        # Tabblad 4: Rentpro
+        self.tabRentpro = tk.Frame(
+            self.tabControl,
+            background=KLEUREN["achtergrond"]
+        )
+        self.tabControl.add(self.tabRentpro, text="Rentpro")
+        self.rentproTab = RentproTab(self.tabRentpro, self)
     
     def _maakStatusbalk(self):
         """Maak de statusbalk onderaan het scherm"""
@@ -303,6 +322,16 @@ class ExcelladinApp:
         self.statusLabel.config(text=statusTekst)
         self.root.update_idletasks()
     
+    def toonFoutmeldingMetKopieerKnop(self, titel, bericht):
+        """
+        Toon een foutmelding popup met een kopieerknop
+        
+        Args:
+            titel (str): Titel van de foutmelding
+            bericht (str): Foutmeldingstekst
+        """
+        StijlvollePopup(self.root, titel, bericht, popup_type="fout", kopieer_knop=True)
+    
     def toonFoutmelding(self, titel, bericht):
         """
         Toon een foutmelding popup
@@ -311,7 +340,7 @@ class ExcelladinApp:
             titel (str): Titel van de foutmelding
             bericht (str): Foutmeldingstekst
         """
-        messagebox.showerror(titel, bericht)
+        self.toonFoutmeldingMetKopieerKnop(titel, bericht)
     
     def toonSuccesmelding(self, titel, bericht):
         """
@@ -321,7 +350,40 @@ class ExcelladinApp:
             titel (str): Titel van de succesmelding
             bericht (str): Succesmeldingstekst
         """
-        messagebox.showinfo(titel, bericht)
+        StijlvollePopup(self.root, titel, bericht, popup_type="info")
+    
+    def toonWaarschuwing(self, titel, bericht):
+        """
+        Toon een waarschuwing popup
+        
+        Args:
+            titel (str): Titel van de waarschuwing
+            bericht (str): Waarschuwingstekst
+        """
+        StijlvollePopup(self.root, titel, bericht, popup_type="waarschuwing")
+    
+    def toonBevestigingVraag(self, titel, bericht):
+        """
+        Toon een bevestigingsvraag popup
+        
+        Args:
+            titel (str): Titel van de vraag
+            bericht (str): Vraagtekst
+        
+        Returns:
+            bool: True als de gebruiker 'Ja' kiest, False als de gebruiker 'Nee' kiest
+        """
+        popup = StijlvollePopup(
+            self.root,
+            titel,
+            bericht,
+            popup_type="vraag",
+            actie_knoppen=[
+                {'tekst': 'Ja', 'commando': lambda: popup.ja_actie(), 'primair': True},
+                {'tekst': 'Nee', 'commando': lambda: popup.nee_actie()}
+            ]
+        )
+        return popup.wacht_op_antwoord()
     
     def laadExcelBestand(self, bestandspad):
         """

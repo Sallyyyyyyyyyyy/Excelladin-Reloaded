@@ -1,0 +1,25 @@
+# Python bytecode files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtuele omgeving
+.venv/
+venv/
+ENV/
+
+# Logs
+logs/
+
+# Backup bestanden
+!fullappbackups/
+
+# IDE bestanden
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Overige
+.DS_Store
+Thumbs.db

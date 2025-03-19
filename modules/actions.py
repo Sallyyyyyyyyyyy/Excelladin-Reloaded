@@ -5,6 +5,18 @@ Bevat de logica voor het definiëren en uitvoeren van acties op Excel-kolommen
 from modules.logger import logger
 from modules.excel_handler import excelHandler
 
+# Importeer RentPro acties
+from modules.actions.rentpro_inlezen import (
+    RentProInlezenActie,
+    RentProMeerdereInlezenActie,
+    RentProZoekInlezenActie
+)
+from modules.actions.rentpro_upload import (
+    RentProUploadActie,
+    RentProBulkUploadActie,
+    RentProUpdateActie
+)
+
 class ActieResultaat:
     """Resultaat van een actie"""
     def __init__(self, succes, bericht):
@@ -14,16 +26,18 @@ class ActieResultaat:
 class ActieBasis:
     """Basis klasse voor alle acties"""
     
-    def __init__(self, naam, beschrijving):
+    def __init__(self, naam, beschrijving, categorie="Algemeen"):
         """
         Initialiseer een actie
         
         Args:
             naam (str): Naam van de actie
             beschrijving (str): Beschrijving van de actie
+            categorie (str): Categorie van de actie (nieuw)
         """
         self.naam = naam
         self.beschrijving = beschrijving
+        self.categorie = categorie
     
     def voerUit(self, parameters, rijen=None):
         """
@@ -45,7 +59,8 @@ class KolomVullenActie(ActieBasis):
         """Initialiseer de kolom vullen actie"""
         super().__init__(
             naam="kolomVullen",
-            beschrijving="Vul een kolom met gecombineerde data uit andere kolommen"
+            beschrijving="Vul een kolom met gecombineerde data uit andere kolommen",
+            categorie="Lokale sheet bijwerken"
         )
     
     def voerUit(self, parameters, rijen=None):
@@ -147,7 +162,8 @@ class KolomSchoonmakenActie(ActieBasis):
         """Initialiseer de kolom schoonmaken actie"""
         super().__init__(
             naam="kolomSchoonmaken",
-            beschrijving="Schoon een kolom op door onnodige tekens te verwijderen"
+            beschrijving="Schoon een kolom op door onnodige tekens te verwijderen",
+            categorie="Lokale sheet bijwerken"
         )
     
     def voerUit(self, parameters, rijen=None):
@@ -231,8 +247,19 @@ class KolomSchoonmakenActie(ActieBasis):
 
 # Lijst met beschikbare acties
 BESCHIKBARE_ACTIES = {
+    # Lokale sheet acties
     "kolomVullen": KolomVullenActie(),
     "kolomSchoonmaken": KolomSchoonmakenActie(),
+    
+    # RentPro inlezen acties
+    "rentProInlezen": RentProInlezenActie(),
+    "rentProMeerdereInlezen": RentProMeerdereInlezenActie(),
+    "rentProZoekInlezen": RentProZoekInlezenActie(),
+    
+    # RentPro upload acties
+    "rentProUpload": RentProUploadActie(),
+    "rentProBulkUpload": RentProBulkUploadActie(),
+    "rentProUpdate": RentProUpdateActie(),
 }
 
 def haalActieOp(actieNaam):

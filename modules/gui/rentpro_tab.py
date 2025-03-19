@@ -28,11 +28,13 @@ class RentproTab:
         self.parent = parent
         self.app = app
         self.is_bezig = False
+        self.is_ingelogd = False
         
         # Laad opgeslagen inloggegevens
-        from modules.settings import haalRentproGebruikersnaam, haalRentproWachtwoord
+        from modules.settings import haalRentproGebruikersnaam, haalRentproWachtwoord, haalRentproURL
         self.opgeslagen_gebruikersnaam = haalRentproGebruikersnaam()
         self.opgeslagen_wachtwoord = haalRentproWachtwoord()
+        self.opgeslagen_url = haalRentproURL()
         
         # Bouw de UI
         self._buildUI()
@@ -62,10 +64,12 @@ class RentproTab:
         instructieLabel.pack(fill=tk.X)
         
         # Thematische quote
+        label_stijl = STIJLEN["label"].copy()
+        del label_stijl["font"]
         quoteLabel = tk.Label(
             self.container,
             text="\"Als een dief in de nacht, zo stil haalt Excelladin uw gegevens binnen...\"",
-            **STIJLEN["label"],
+            **label_stijl,
             font=("Arial", 10, "italic"),
             fg="#fdb04d"  # Gouden kleur voor de quote
         )
@@ -138,6 +142,28 @@ class RentproTab:
         )
         wachtwoordEntry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
+        # URL naar back-office
+        urlFrame = tk.Frame(inlogFrame, background=KLEUREN["achtergrond"])
+        urlFrame.pack(fill=tk.X, pady=5)
+        
+        urlLabel = tk.Label(
+            urlFrame,
+            text="Back-office URL:",
+            **STIJLEN["label"],
+            width=15,
+            anchor=tk.W
+        )
+        urlLabel.pack(side=tk.LEFT)
+        
+        self.urlVar = tk.StringVar()
+        urlEntry = tk.Entry(
+            urlFrame,
+            textvariable=self.urlVar,
+            **STIJLEN["entry"],
+            width=30
+        )
+        urlEntry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
         # Frame voor synchronisatie opties
         optiesFrame = tk.Frame(
             self.container,
@@ -174,6 +200,72 @@ class RentproTab:
         )
         onthoudInlogCheck.pack(anchor=tk.W, pady=5)
         Tooltip(onthoudInlogCheck, "Sla inloggegevens op voor volgende sessie")
+        
+        # Inlogknop en status frame
+        inlogActieFrame = tk.Frame(inlogFrame, background=KLEUREN["achtergrond"])
+        inlogActieFrame.pack(fill=tk.X, pady=5)
+        
+        # Inlogknop
+        self.inlogButton = tk.Button(
+            inlogActieFrame,
+            text="Log In",
+            command=self.login_zonder_synchronisatie,
+            bg="#b01345",  # Rood in 1001 Nachten stijl
+            fg="#FFFFFF",  # Wit
+            font=("Arial", 10, "bold"),
+            padx=10
+        )
+        self.inlogButton.pack(side=tk.LEFT, padx=(0, 10))
+        Tooltip(self.inlogButton, "Log in bij Rentpro zonder synchronisatie te starten")
+        
+        # Status indicator
+        self.statusLabel = tk.Label(
+            inlogActieFrame,
+            text="Niet ingelogd",
+            fg="#FF0000",  # Rood voor niet ingelogd
+            background=KLEUREN["achtergrond"],
+            font=("Arial", 10)
+        )
+        self.statusLabel.pack(side=tk.LEFT)
+        
+        # Productenoverzicht frame
+        self.productenFrame = tk.Frame(
+            self.container,
+            background=KLEUREN["achtergrond"],
+            padx=10,
+            pady=10,
+            relief=tk.GROOVE,
+            borderwidth=1
+        )
+        self.productenFrame.pack(fill=tk.X, pady=10)
+        
+        # Titel voor productenoverzicht
+        label_stijl = STIJLEN["label"].copy()
+        del label_stijl["font"]
+        productenLabel = tk.Label(
+            self.productenFrame,
+            text="Productenoverzicht",
+            **label_stijl,
+            font=("Arial", 12, "bold")
+        )
+        productenLabel.pack(fill=tk.X)
+        
+        # Scrollbaar frame voor producten
+        productenScrollFrame = tk.Frame(self.productenFrame, background=KLEUREN["achtergrond"])
+        productenScrollFrame.pack(fill=tk.BOTH, expand=True, pady=5)
+        
+        productenScroll = tk.Scrollbar(productenScrollFrame)
+        productenScroll.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.productenText = tk.Text(
+            productenScrollFrame,
+            **STIJLEN["entry"],
+            height=6,
+            yscrollcommand=productenScroll.set,
+            state=tk.DISABLED
+        )
+        self.productenText.pack(fill=tk.BOTH, expand=True)
+        productenScroll.config(command=self.productenText.yview)
         
         # Overschrijf lokale data optie
         self.overschrijfVar = tk.BooleanVar(value=False)
@@ -377,6 +469,13 @@ class RentproTab:
             self.wachtwoordVar.set(self.opgeslagen_wachtwoord)
             self.onthoudInlogVar.set(True)
         
+        # Vul opgeslagen URL in als beschikbaar
+        if self.opgeslagen_url:
+            self.urlVar.set(self.opgeslagen_url)
+        else:
+            # Standaard URL
+            self.urlVar.set("http://metroeventsdc.rentpro5.nl/")
+        
         # Initiële status
         self.updateResultaat("Gereed voor synchronisatie met Rentpro")
     
@@ -437,9 +536,14 @@ class RentproTab:
         # Check inloggegevens
         gebruikersnaam = self.gebruikersnaamVar.get().strip()
         wachtwoord = self.wachtwoordVar.get().strip()
+        url = self.urlVar.get().strip()
         
         if not gebruikersnaam or not wachtwoord:
             self.app.toonFoutmelding("Ontbrekende gegevens", "Vul de gebruikersnaam en wachtwoord in")
+            return
+        
+        if not url:
+            self.app.toonFoutmelding("Ontbrekende gegevens", "Vul de back-office URL in")
             return
         
         # Haal opties op
@@ -448,14 +552,16 @@ class RentproTab:
         
         # Sla inloggegevens op indien gewenst
         if self.onthoudInlogVar.get():
-            from modules.settings import stelRentproGebruikersnaamIn, stelRentproWachtwoordIn
+            from modules.settings import stelRentproGebruikersnaamIn, stelRentproWachtwoordIn, stelRentproURLIn
             stelRentproGebruikersnaamIn(gebruikersnaam)
             stelRentproWachtwoordIn(wachtwoord)
+            stelRentproURLIn(url)
         else:
             # Verwijder opgeslagen inloggegevens als gebruiker niet wil onthouden
-            from modules.settings import stelRentproGebruikersnaamIn, stelRentproWachtwoordIn
+            from modules.settings import stelRentproGebruikersnaamIn, stelRentproWachtwoordIn, stelRentproURLIn
             stelRentproGebruikersnaamIn("")
             stelRentproWachtwoordIn("")
+            stelRentproURLIn("")
         
         # Start de synchronisatie in een aparte thread
         self.is_bezig = True
@@ -468,27 +574,29 @@ class RentproTab:
         self.startButton.config(state=tk.DISABLED)
         
         # Start een asyncio event loop in een aparte thread
-        threading.Thread(target=self.run_async_task, args=(gebruikersnaam, wachtwoord, overschrijf_lokaal, bereik), daemon=True).start()
+        threading.Thread(target=self.run_async_task, args=(gebruikersnaam, wachtwoord, url, overschrijf_lokaal, bereik), daemon=True).start()
     
-    def run_async_task(self, gebruikersnaam, wachtwoord, overschrijf_lokaal, bereik):
+    def run_async_task(self, gebruikersnaam, wachtwoord, url, overschrijf_lokaal, bereik):
         """
         Voer asyncio taken uit in een aparte thread
         
         Args:
             gebruikersnaam (str): Rentpro gebruikersnaam
             wachtwoord (str): Rentpro wachtwoord
+            url (str): De URL voor de Rentpro back-office
             overschrijf_lokaal (bool): Of lokale data overschreven moet worden
             bereik (tuple): Bereik van rijen om te synchroniseren of None voor alles
         """
-        asyncio.run(self.synchroniseer(gebruikersnaam, wachtwoord, overschrijf_lokaal, bereik))
+        asyncio.run(self.synchroniseer(gebruikersnaam, wachtwoord, url, overschrijf_lokaal, bereik))
     
-    async def synchroniseer(self, gebruikersnaam, wachtwoord, overschrijf_lokaal, bereik):
+    async def synchroniseer(self, gebruikersnaam, wachtwoord, url, overschrijf_lokaal, bereik):
         """
         Asynchrone functie voor synchronisatie met Rentpro
         
         Args:
             gebruikersnaam (str): Rentpro gebruikersnaam
             wachtwoord (str): Rentpro wachtwoord
+            url (str): De URL voor de Rentpro back-office
             overschrijf_lokaal (bool): Of lokale data overschreven moet worden
             bereik (tuple): Bereik van rijen om te synchroniseren of None voor alles
         """
@@ -501,7 +609,7 @@ class RentproTab:
             
             # Login
             self.update_ui_status("Inloggen bij Rentpro...")
-            login_success = await rentproHandler.login(gebruikersnaam, wachtwoord)
+            login_success = await rentproHandler.login(gebruikersnaam, wachtwoord, url)
             
             if not login_success:
                 self.update_ui_error("Inloggen bij Rentpro mislukt. Controleer je inloggegevens.")
@@ -571,6 +679,184 @@ class RentproTab:
         self.is_bezig = False
         self.voortgangBalk.stop()
         self.startButton.config(state=tk.NORMAL)
+        
+    def login_zonder_synchronisatie(self):
+        """Log in bij Rentpro zonder synchronisatie te starten"""
+        if self.is_bezig:
+            self.app.toonWaarschuwing("Bezig", "Er is al een actie bezig")
+            return
+        
+        # Check inloggegevens
+        gebruikersnaam = self.gebruikersnaamVar.get().strip()
+        wachtwoord = self.wachtwoordVar.get().strip()
+        url = self.urlVar.get().strip()
+        
+        if not gebruikersnaam or not wachtwoord:
+            self.app.toonFoutmelding("Ontbrekende gegevens", "Vul de gebruikersnaam en wachtwoord in")
+            return
+        
+        if not url:
+            self.app.toonFoutmelding("Ontbrekende gegevens", "Vul de back-office URL in")
+            return
+        
+        # Sla inloggegevens op indien gewenst
+        if self.onthoudInlogVar.get():
+            from modules.settings import stelRentproGebruikersnaamIn, stelRentproWachtwoordIn, stelRentproURLIn
+            stelRentproGebruikersnaamIn(gebruikersnaam)
+            stelRentproWachtwoordIn(wachtwoord)
+            stelRentproURLIn(url)
+        
+        # Start het inloggen in een aparte thread
+        self.is_bezig = True
+        self.voortgangBalk.start(10)  # Start de voortgangsbalk (interval in ms)
+        self.voortgangLabel.config(text="Bezig met inloggen...")
+        self.app.updateStatus("Bezig met inloggen bij Rentpro...")
+        self.updateResultaat("Inloggen bij Rentpro...")
+        
+        # Disable knoppen tijdens verwerking
+        self.inlogButton.config(state=tk.DISABLED)
+        self.startButton.config(state=tk.DISABLED)
+        
+        # Start een asyncio event loop in een aparte thread
+        threading.Thread(target=self.run_login_task, args=(gebruikersnaam, wachtwoord, url), daemon=True).start()
+    
+    def run_login_task(self, gebruikersnaam, wachtwoord, url):
+        """
+        Voer asyncio login taak uit in een aparte thread
+        
+        Args:
+            gebruikersnaam (str): Rentpro gebruikersnaam
+            wachtwoord (str): Rentpro wachtwoord
+            url (str): De URL voor de Rentpro back-office
+        """
+        asyncio.run(self.login_en_toon_producten(gebruikersnaam, wachtwoord, url))
+    
+    async def login_en_toon_producten(self, gebruikersnaam, wachtwoord, url):
+        """
+        Asynchrone functie voor inloggen en producten ophalen
+        
+        Args:
+            gebruikersnaam (str): Rentpro gebruikersnaam
+            wachtwoord (str): Rentpro wachtwoord
+            url (str): De URL voor de Rentpro back-office
+        """
+        try:
+            # Update UI
+            self.update_ui_status("Verbinding maken met Rentpro...")
+            
+            # Initialiseer de sessie
+            await rentproHandler.initialize()
+            
+            # Login
+            self.update_ui_status("Inloggen bij Rentpro...")
+            login_success = await rentproHandler.login(gebruikersnaam, wachtwoord, url)
+            
+            if not login_success:
+                self.update_ui_error("Inloggen bij Rentpro mislukt. Controleer je inloggegevens.")
+                return
+            
+            # Update status
+            self.is_ingelogd = True
+            self.app.root.after(0, lambda: self.statusLabel.config(text="Ingelogd ✓", fg="#00AA00"))
+            self.update_ui_success("Succesvol ingelogd bij Rentpro")
+            
+            # Haal producten op en toon overzicht
+            self.update_ui_status("Ophalen van productenoverzicht...")
+            producten = await self.haal_producten_op()
+            if producten:
+                self.app.root.after(0, lambda: self.toon_product_overzicht(producten))
+                self.update_ui_success("Productenoverzicht bijgewerkt")
+            else:
+                self.update_ui_error("Geen producten gevonden of fout bij ophalen")
+                
+        except Exception as e:
+            logger.logFout(f"Fout bij inloggen: {e}")
+            self.update_ui_error(f"Fout bij inloggen: {str(e)}")
+        finally:
+            # Sluit de sessie
+            await rentproHandler.close()
+            
+            # Herstel UI
+            self.app.root.after(0, self.reset_login_ui)
+    
+    def reset_login_ui(self):
+        """Reset de UI na inloggen"""
+        self.is_bezig = False
+        self.voortgangBalk.stop()
+        self.inlogButton.config(state=tk.NORMAL)
+        self.startButton.config(state=tk.NORMAL)
+    
+    def toon_product_overzicht(self, producten):
+        """
+        Toon een overzicht van producten in het productenText veld
+        
+        Args:
+            producten (list): Lijst van tuples met (product_id, product_naam)
+        """
+        if not producten:
+            return
+        
+        # Maak het tekstveld bewerkbaar
+        self.productenText.config(state=tk.NORMAL)
+        self.productenText.delete(1.0, tk.END)
+        
+        # Toon de eerste 3 producten
+        eerste_producten = producten[:3]
+        for product_id, product_naam in eerste_producten:
+            self.productenText.insert(tk.END, f"{product_id:<10} {product_naam}\n")
+        
+        # Voeg zonsymbool toe als scheiding
+        if len(producten) > 6:
+            self.productenText.insert(tk.END, "\n☀️ ... ☀️\n\n")
+        
+        # Toon de laatste 3 producten
+        laatste_producten = producten[-3:] if len(producten) > 3 else []
+        for product_id, product_naam in laatste_producten:
+            self.productenText.insert(tk.END, f"{product_id:<10} {product_naam}\n")
+        
+        # Maak het tekstveld weer alleen-lezen
+        self.productenText.config(state=tk.DISABLED)
+    
+    async def haal_producten_op(self):
+        """
+        Haal producten op uit Rentpro
+        
+        Returns:
+            list: Lijst van tuples met (product_id, product_naam)
+        """
+        try:
+            # Navigeer naar de productpagina
+            await rentproHandler.navigeer_naar_producten()
+            
+            # Evalueer JavaScript om producten op te halen
+            js_code = """
+            (function() {
+                const rows = document.querySelectorAll('table.grid tbody tr');
+                const products = [];
+                
+                for (let row of rows) {
+                    const idCell = row.querySelector('td:nth-child(1)');
+                    const nameCell = row.querySelector('td:nth-child(2)');
+                    
+                    if (idCell && nameCell) {
+                        products.push([idCell.textContent.trim(), nameCell.textContent.trim()]);
+                    }
+                }
+                
+                return products;
+            })();
+            """
+            
+            producten = await rentproHandler.evalueer_javascript(js_code)
+            
+            if not producten or not isinstance(producten, list):
+                logger.logFout("Geen producten gevonden of ongeldig formaat")
+                return []
+            
+            return producten
+        except Exception as e:
+            logger.logFout(f"Fout bij ophalen producten: {e}")
+            return []
     
     def vraag_opslaan(self):
         """Vraag of de gebruiker het resultaat wil opslaan"""

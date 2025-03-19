@@ -3,7 +3,6 @@ Excel Handler module voor Excelladin Reloaded
 Verantwoordelijk voor het inlezen, bewerken en opslaan van Excel-bestanden
 """
 import os
-import shutil
 import datetime
 import pandas as pd
 from modules.logger import logger
@@ -47,31 +46,6 @@ class ExcelHandler:
         except Exception as e:
             logger.logFout(f"Fout bij openen Excel-bestand: {e}")
             return False
-    
-    def maakBackup(self):
-        """
-        Maak een backup van het huidige Excel-bestand
-        
-        Returns:
-            str: Pad naar het backup bestand of None bij fout
-        """
-        if not self.huidigBestand:
-            logger.logWaarschuwing("Kan geen backup maken: Geen bestand geopend")
-            return None
-        
-        try:
-            # Maak een backup met timestamp
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            bestandsnaam, extensie = os.path.splitext(self.huidigBestand)
-            backupPad = f"{bestandsnaam}_backup_{timestamp}{extensie}"
-            
-            shutil.copy2(self.huidigBestand, backupPad)
-            logger.logInfo(f"Backup gemaakt: {backupPad}")
-            
-            return backupPad
-        except Exception as e:
-            logger.logFout(f"Fout bij maken backup: {e}")
-            return None
     
     def bewerkKolom(self, kolomNaam, nieuweWaarden, rijen=None):
         """
@@ -186,8 +160,7 @@ class ExcelHandler:
             return False
         
         try:
-            # Maak eerst een backup
-            self.maakBackup()
+            # Backup functionaliteit verwijderd om stabiliteitsproblemen te voorkomen
             
             # Sla op naar origineel bestand
             self.huidigDataFrame.to_excel(self.huidigBestand, index=False)

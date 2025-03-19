@@ -214,10 +214,20 @@ class Instellingen:
         Returns:
             str: Pad naar laatst gebruikte bestand of leeg als er geen is
         """
-        onthoud = self.haalOp('Algemeen', 'OnthoudBestand') == 'True'
-        if onthoud:
-            return self.haalOp('Algemeen', 'LaatsteBestand', '')
-        return ''
+        try:
+            onthoud = self.haalOp('Algemeen', 'OnthoudBestand') == 'True'
+            if onthoud:
+                bestandspad = self.haalOp('Algemeen', 'LaatsteBestand', '')
+                # Controleer of het bestand bestaat
+                if bestandspad and os.path.exists(maak_absoluut_pad(bestandspad)):
+                    return bestandspad
+                else:
+                    logger.logWaarschuwing(f"Laatst gebruikte bestand bestaat niet meer: {bestandspad}")
+                    return ''
+            return ''
+        except Exception as e:
+            logger.logFout(f"Fout bij ophalen laatste bestand: {e}")
+            return ''
     
     def stelLaatsteBestandIn(self, bestandspad):
         """
@@ -294,3 +304,21 @@ def haalRentproWachtwoord():
         str: Het opgeslagen wachtwoord of een lege string
     """
     return instellingen.haalOp('Rentpro', 'Wachtwoord', '')
+
+def stelRentproURLIn(url):
+    """
+    Sla de Rentpro back-office URL op
+    
+    Args:
+        url (str): De URL voor de Rentpro back-office
+    """
+    instellingen.stelIn('Rentpro', 'URL', url)
+
+def haalRentproURL():
+    """
+    Haal de opgeslagen Rentpro back-office URL op
+    
+    Returns:
+        str: De opgeslagen URL of een standaard URL
+    """
+    return instellingen.haalOp('Rentpro', 'URL', 'http://metroeventsdc.rentpro5.nl/')

@@ -182,7 +182,7 @@ class ExcelladinApp:
         # Tabbladen
         self._maakTabbladen()
         
-        # Statusbalk met Opslaan en Afsluiten knoppen
+        # Statusbalk met knoppen
         self._maakStatusbalk()
     
     def _maakHeader(self):

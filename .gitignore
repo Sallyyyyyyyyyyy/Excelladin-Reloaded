@@ -11,9 +11,6 @@ ENV/
 # Logs
 logs/
 
-# Backup bestanden
-!fullappbackups/
-
 # IDE bestanden
 .vscode/
 .idea/

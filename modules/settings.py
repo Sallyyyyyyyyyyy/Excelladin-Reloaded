@@ -215,14 +215,30 @@ class Instellingen:
             str: Pad naar laatst gebruikte bestand of leeg als er geen is
         """
         try:
-            onthoud = self.haalOp('Algemeen', 'OnthoudBestand') == 'True'
+            # Controleer eerst of de instelling bestaat
+            try:
+                onthoud = self.haalOp('Algemeen', 'OnthoudBestand') == 'True'
+            except Exception as e:
+                logger.logWaarschuwing(f"Kon 'OnthoudBestand' instelling niet lezen: {e}")
+                onthoud = False
+            
             if onthoud:
-                bestandspad = self.haalOp('Algemeen', 'LaatsteBestand', '')
+                try:
+                    bestandspad = self.haalOp('Algemeen', 'LaatsteBestand', '')
+                except Exception as e:
+                    logger.logWaarschuwing(f"Kon 'LaatsteBestand' instelling niet lezen: {e}")
+                    return ''
+                
                 # Controleer of het bestand bestaat
-                if bestandspad and os.path.exists(maak_absoluut_pad(bestandspad)):
-                    return bestandspad
-                else:
-                    logger.logWaarschuwing(f"Laatst gebruikte bestand bestaat niet meer: {bestandspad}")
+                try:
+                    absoluut_pad = maak_absoluut_pad(bestandspad)
+                    if bestandspad and os.path.exists(absoluut_pad):
+                        return bestandspad
+                    else:
+                        logger.logWaarschuwing(f"Laatst gebruikte bestand bestaat niet meer: {bestandspad}")
+                        return ''
+                except Exception as e:
+                    logger.logWaarschuwing(f"Fout bij controleren of bestand bestaat: {e}")
                     return ''
             return ''
         except Exception as e:

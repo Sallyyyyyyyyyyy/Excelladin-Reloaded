@@ -402,6 +402,15 @@ class RentproTab:
         self.resultaatText.see(tk.END)
         self.resultaatText.config(state=tk.DISABLED)
     
+    def toon_overschrijf_waarschuwing(self):
+        """Toon een waarschuwing als de gebruiker lokale data wil overschrijven"""
+        if self.overschrijfVar.get():
+            self.app.toonWaarschuwing(
+                "Let op!", 
+                "Je staat op het punt om lokale data te overschrijven met gegevens uit Rentpro. " +
+                "Bestaande gegevens kunnen verloren gaan. Wees hier voorzichtig mee!"
+            )
+    
     def start_synchronisatie(self):
         """Start de synchronisatie met Rentpro"""
         if self.is_bezig:
@@ -423,6 +432,12 @@ class RentproTab:
         # Haal opties op
         overschrijf_lokaal = self.overschrijfVar.get()
         bereik = self.haalGeselecteerdBereik()
+        
+        # Sla inloggegevens op indien gewenst
+        if self.onthoudInlogVar.get():
+            from modules.settings import instellingen
+            instellingen.stelRentproGebruikersnaamIn(gebruikersnaam)
+            instellingen.stelRentproWachtwoordIn(wachtwoord)
         
         # Start de synchronisatie in een aparte thread
         self.is_bezig = True

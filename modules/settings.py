@@ -97,6 +97,10 @@ class Instellingen:
             },
             'Interface': {
                 'ToonTooltips': 'True',
+            },
+            'Rentpro': {
+                'Gebruikersnaam': '',
+                'Wachtwoord': '',
             }
         }
         
@@ -254,3 +258,39 @@ class Instellingen:
 
 # Singleton instance voor gebruik in de hele applicatie
 instellingen = Instellingen()
+
+def stelRentproGebruikersnaamIn(gebruikersnaam):
+    """
+    Sla de Rentpro gebruikersnaam op
+    
+    Args:
+        gebruikersnaam (str): De gebruikersnaam voor Rentpro
+    """
+    instellingen.stelIn('Rentpro', 'Gebruikersnaam', gebruikersnaam)
+
+def stelRentproWachtwoordIn(wachtwoord):
+    """
+    Sla het Rentpro wachtwoord op
+    
+    Args:
+        wachtwoord (str): Het wachtwoord voor Rentpro
+    """
+    instellingen.stelIn('Rentpro', 'Wachtwoord', wachtwoord)
+
+def haalRentproGebruikersnaam():
+    """
+    Haal de opgeslagen Rentpro gebruikersnaam op
+    
+    Returns:
+        str: De opgeslagen gebruikersnaam of een lege string
+    """
+    return instellingen.haalOp('Rentpro', 'Gebruikersnaam', '')
+
+def haalRentproWachtwoord():
+    """
+    Haal het opgeslagen Rentpro wachtwoord op
+    
+    Returns:
+        str: Het opgeslagen wachtwoord of een lege string
+    """
+    return instellingen.haalOp('Rentpro', 'Wachtwoord', '')

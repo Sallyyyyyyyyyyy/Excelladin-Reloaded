@@ -275,12 +275,12 @@ class ExcelladinApp:
         self.tabControl.add(self.tabActies, text="Acties")
         self.actiesTab = ActiesTab(self.tabActies, self)
         
-        # Tabblad 4: Rentpro
+        # Tabblad 4: Downloaden van gegevens (voorheen Rentpro)
         self.tabRentpro = tk.Frame(
             self.tabControl,
             background=KLEUREN["achtergrond"]
         )
-        self.tabControl.add(self.tabRentpro, text="Rentpro")
+        self.tabControl.add(self.tabRentpro, text="Downloaden van gegevens")
         self.rentproTab = RentproTab(self.tabRentpro, self)
     
     def _maakStatusbalk(self):

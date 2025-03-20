@@ -257,10 +257,12 @@ class RentproTab:
         productenLabel.pack(fill=tk.X)
         
         # Opmerking dat dit alleen voor preview is
+        label_stijl = STIJLEN["label"].copy()
+        del label_stijl["font"]
         previewLabel = tk.Label(
             self.productenFrame,
             text="(Alleen voor weergave/preview)",
-            **STIJLEN["label"],
+            **label_stijl,
             font=("Arial", 8, "italic")
         )
         previewLabel.pack(fill=tk.X)

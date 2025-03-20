@@ -1,0 +1,88 @@
+# Concreet Voorbeeld Workflow
+
+## Stap 1: Jouw verzoek aan Claude Desktop
+
+> Ik wil een image generator toevoegen aan mijn React applicatie. Ik gebruik momenteel React 18, de gebruiker moet een tekstprompt kunnen ingeven en dan wordt er een afbeelding gegenereerd. Ik wil daarvoor de Stable Diffusion API gebruiken. Het moet responsive zijn en de gegenereerde afbeeldingen moeten kunnen worden gedownload.
+
+## Stap 2: Claude Desktop Analyse & Prompt Generatie
+
+```
+Als TARS heb ik je verzoek geanalyseerd. Je wilt een Stable Diffusion image generator in je React 18 applicatie integreren.
+
+Kritieke aanvullingen die je niet hebt genoemd:
+- API sleutelbeheer (veilig opslaan)
+- Laadstatus tonen tijdens generatie
+- Foutafhandeling
+- Rate limiting (API-kosten beheersen)
+
+Toekomstbestendige aanbevelingen:
+- Ondersteuning voor verschillende beeldformaten/resoluties
+- Opslaan van generatiegeschiedenis
+- Mogelijkheid om beelden te bewerken na generatie
+
+Zal ik een gestructureerde prompt maken voor je VSCode Claude implementatie?
+```
+
+## Stap 3: Na jouw bevestiging, de gegenereerde prompt
+
+```
+[CONTEXT]
+React 18 applicatie die moet worden uitgebreid met een image generator functionaliteit op basis van Stable Diffusion API.
+
+[DOEL]
+Een gebruiksvriendelijke interface implementeren waarmee gebruikers een tekstprompt kunnen invoeren om afbeeldingen te genereren, deze kunnen bekijken en downloaden.
+
+[TECHNISCH]
+- Gebruik React 18 hooks (useState, useEffect)
+- Implementeer Stable Diffusion API integratie
+- Maak responsive UI componenten
+- Implementeer download functionaliteit
+- Voeg laadstatus en foutafhandeling toe
+- Zorg voor veilige API-sleutelbehandeling
+
+[IMPLEMENTATIE]
+1. Maak een ImageGenerator component dat:
+   - Een formulier bevat voor het invoeren van de tekstprompt
+   - Een knop heeft om de generatie te starten
+   - Een laadstatus toont
+   - De gegenereerde afbeelding weergeeft
+   - Een downloadknop biedt
+
+2. Maak een aparte API service voor de Stable Diffusion communicatie
+   - Haal de API-sleutel uit een .env bestand
+   - Voeg error handling toe
+   - Implementeer rate limiting
+
+3. Implementeer een ImageDisplay component voor:
+   - Responsive weergave van afbeeldingen
+   - Download functionaliteit
+   - Metadata weergave (prompt, datum)
+
+[VALIDATIE]
+- Component moet responsive werken op desktop en mobiel
+- Generatie moet correcte laadstatus tonen
+- Foutmeldingen moeten gebruiksvriendelijk zijn
+- Downloadfunctie moet werken
+- API-sleutel mag niet hardcoded of client-side zichtbaar zijn
+```
+
+## Stap 4: Jij kopieert deze prompt naar VSCode via Cline
+
+## Stap 5: VSCode Claude implementeert exact volgens instructies
+
+VSCode Claude zou nu precies de gespecificeerde componenten implementeren zonder eigen ideeën toe te voegen of af te wijken van de instructies, en zonder onnodige documentatie te schrijven.
+
+Dit proces stroomlijnt de samenwerking tussen beide Claude-omgevingen, waarbij Desktop Claude de denkende/planningsfase doet en VSCode Claude de precieze implementatie verzorgt.
+
+---
+
+#Hierna krijgt CLaude in VSCode de volgende custom instructies:
+1. Antwoord in Nederlands, kort en gericht op kernpunten.
+2. IMPLEMENTEER exact wat in de prompt staat.
+3. SCHRIJF code die:
+   - Opgesplitst is in kleine, modulaire scripts
+   - Grondig gedebugged is zonder testbestanden te maken
+   - Minimaal tokengebruik heeft
+4. VALIDEER je werk volgens de criteria in de prompt.
+5. WIJK NIET AF van de instructie of voeg geen eigen ideeën toe.
+6. GEEN wijzigingsdocumenten of extra documentatie schrijven.

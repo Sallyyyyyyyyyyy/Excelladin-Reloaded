@@ -1,6 +1,10 @@
 """
 RentPro Handler - Hoofdklasse voor RentPro integratie
 Verantwoordelijk voor het coördineren van alle RentPro componenten
+Met ondersteuning voor zowel browser-mode als directe API-requests mode
+
+BELANGRIJK: Dit is de definitieve implementatie die direct geïmporteerd wordt door
+modules/rentpro_handler.py voor backwards compatibiliteit.
 """
 import asyncio
 from modules.logger import logger
@@ -9,6 +13,7 @@ from modules.rentpro.authenticator import Authenticator
 from modules.rentpro.navigator import Navigator
 from modules.rentpro.data_extractor import DataExtractor
 from modules.rentpro.excel_manager import ExcelManager
+from modules.rentpro.api_handler import ApiHandler
 
 class RentproHandler:
     """
@@ -24,23 +29,34 @@ class RentproHandler:
         # Flags voor status en configuratie
         self.ingelogd = False
         self.gebruik_mockdata = False
+        self.gebruik_api_mode = True  # Standaard API-mode gebruiken (zonder browser)
         
-        # Initialiseer alle componenten
+        # Initialiseer browser componenten
         self.driver_manager = DriverManager()
         self.authenticator = Authenticator(self.driver_manager)
         self.navigator = Navigator(self.driver_manager, self.authenticator)
         self.data_extractor = DataExtractor(self.driver_manager, self.navigator)
         self.excel_manager = ExcelManager()
         
+        # Initialiseer API componenten
+        self.api_handler = ApiHandler()
+        
     async def initialize(self):
         """
         Initialiseer de RentPro handler en alle componenten
+        In API-mode wordt geen WebDriver geïnitialiseerd
         
         Returns:
             bool: True als initialisatie succesvol was, anders False
         """
         try:
-            # Initialiseer de WebDriver
+            # Als we in API-mode zijn, hoeven we de browser niet te initialiseren
+            if self.gebruik_api_mode:
+                logger.logInfo("API mode actief, geen browser initialisatie nodig")
+                return True
+                
+            # Alleen in browser-mode: initialiseer de WebDriver
+            logger.logInfo("Browser mode actief, WebDriver initialiseren")
             return await self.driver_manager.initialize()
         except Exception as e:
             logger.logFout(f"Kritieke fout bij initialisatie van RentPro handler: {e}")
@@ -49,12 +65,19 @@ class RentproHandler:
     async def close(self):
         """
         Sluit de RentPro sessie en maak resources vrij
+        In API-mode hoeft geen WebDriver gesloten te worden
         
         Returns:
             bool: True als het sluiten succesvol was, anders False
         """
         try:
-            # Sluit de WebDriver
+            # Als we in API-mode zijn, hoeft de browser niet gesloten te worden
+            if self.gebruik_api_mode:
+                logger.logInfo("API mode actief, geen browser om te sluiten")
+                return True
+                
+            # Alleen in browser-mode: sluit de WebDriver
+            logger.logInfo("Browser mode actief, WebDriver sluiten")
             return await self.driver_manager.close()
         except Exception as e:
             logger.logFout(f"Fout bij sluiten van RentPro handler: {e}")
@@ -73,25 +96,41 @@ class RentproHandler:
             bool: True als inloggen succesvol was, anders False
         """
         try:
-            # Initialiseer eerst als nodig
-            if not self.driver_manager.is_initialized:
-                init_success = await self.initialize()
-                if not init_success:
-                    # Als initialisatie mislukt, schakel over naar mockdata
-                    logger.logWaarschuwing("WebDriver initialisatie mislukt, overschakelen naar mockdata modus")
-                    self.gebruik_mockdata = True
-            
             # Als we mockdata gebruiken, simuleer een succesvolle login
             if self.gebruik_mockdata:
                 logger.logInfo("Mockdata modus actief, simuleren van succesvolle login")
                 self.ingelogd = True
                 return True
-            
-            # Login met de authenticator
-            login_success = await self.authenticator.login(gebruikersnaam, wachtwoord, url)
+                
+            # Controleer welke methode we gebruiken (API of browser)
+            if self.gebruik_api_mode:
+                logger.logInfo("API mode actief, inloggen via directe HTTP requests")
+                # Login met de API handler
+                login_success = await self.api_handler.login(gebruikersnaam, wachtwoord, url)
+            else:
+                logger.logInfo("Browser mode actief, inloggen via WebDriver")
+                # Initialiseer browser eerst als nodig
+                if not self.driver_manager.is_initialized:
+                    init_success = await self.initialize()
+                    if not init_success:
+                        # Als initialisatie mislukt, schakel over naar API mode
+                        logger.logWaarschuwing("WebDriver initialisatie mislukt, overschakelen naar API mode")
+                        self.gebruik_api_mode = True
+                        # Probeer opnieuw via API
+                        return await self.login(gebruikersnaam, wachtwoord, url)
+                
+                # Login met de browser authenticator
+                login_success = await self.authenticator.login(gebruikersnaam, wachtwoord, url)
             
             # Als login mislukt, log waarschuwing en schakel over naar mockdata
             if not login_success:
+                # Als browser-mode mislukt, probeer API-mode
+                if not self.gebruik_api_mode:
+                    logger.logWaarschuwing("Browser login mislukt, overschakelen naar API mode")
+                    self.gebruik_api_mode = True
+                    return await self.login(gebruikersnaam, wachtwoord, url)
+                
+                # Als API-mode ook mislukt, schakel naar mockdata
                 logger.logWaarschuwing("Login mislukt, overschakelen naar mockdata modus")
                 self.gebruik_mockdata = True
                 self.ingelogd = True  # Simuleer login voor UI compatibiliteit
@@ -104,6 +143,19 @@ class RentproHandler:
         except Exception as e:
             logger.logFout(f"Onverwachte fout bij inloggen RentPro: {e}")
             
+            # Als we in browser mode zijn, probeer API mode
+            if not self.gebruik_api_mode:
+                logger.logWaarschuwing("Fout bij browser login, overschakelen naar API mode")
+                self.gebruik_api_mode = True
+                try:
+                    return await self.login(gebruikersnaam, wachtwoord, url)
+                except Exception as api_e:
+                    logger.logFout(f"Ook fout bij API login: {api_e}")
+                    # Fallback naar mockdata
+                    self.gebruik_mockdata = True
+                    self.ingelogd = True
+                    return True
+            
             # Graceful degradation: schakel over naar mockdata modus
             logger.logWaarschuwing("Overschakelen naar mockdata modus door onverwachte fout")
             self.gebruik_mockdata = True
@@ -113,6 +165,7 @@ class RentproHandler:
     async def haal_producten_op(self, overschrijf_lokaal=False, rijen=None):
         """
         Haal producten op van RentPro en update Excel
+        Gebruikt verschillende methoden afhankelijk van mode (API/browser)
         
         Args:
             overschrijf_lokaal (bool): Of lokale data overschreven moet worden
@@ -149,8 +202,15 @@ class RentproHandler:
                 logger.logInfo("Mockdata modus actief, genereren van mockdata")
                 return await self._verwerk_mock_producten(overschrijf_lokaal, start_rij, eind_rij)
             
-            # Haal productlijst op (zelfs als we deze niet direct gebruiken, navigeert dit naar de juiste pagina)
-            await self.data_extractor.get_products_list()
+            # Navigeer naar producten pagina en haal producten op via de juiste methode
+            if self.gebruik_api_mode:
+                logger.logInfo("API mode actief, navigeren en ophalen via API")
+                # Navigeer via API naar de productenpagina
+                await self.api_handler.navigate_to_products()
+            else:
+                logger.logInfo("Browser mode actief, navigeren en ophalen via WebDriver")
+                # Haal productlijst op via WebDriver
+                await self.data_extractor.get_products_list()
             
             # Loop door elke rij en verwerk producten
             succesvol = 0
@@ -161,8 +221,15 @@ class RentproHandler:
                     # Geen ProductID, sla deze rij over
                     continue
                 
-                # Haal product details op
-                product_data = await self.data_extractor.get_product_details(product_id)
+                # Haal product details op via de juiste methode
+                product_data = None
+                if self.gebruik_api_mode:
+                    # Haal product details op via API
+                    product_data = await self.api_handler.get_product_details(product_id)
+                else:
+                    # Haal product details op via WebDriver
+                    product_data = await self.data_extractor.get_product_details(product_id)
+                
                 if not product_data:
                     # Kon geen productdetails ophalen
                     continue
@@ -270,6 +337,7 @@ class RentproHandler:
     async def navigeer_naar_producten(self):
         """
         Navigeer naar de productenpagina
+        Gebruikt verschillende navigatiemethoden afhankelijk van mode (API/browser)
         
         Returns:
             bool: True als navigatie succesvol was, anders False
@@ -284,9 +352,14 @@ class RentproHandler:
             if self.gebruik_mockdata:
                 logger.logInfo("Mockdata modus actief, simuleren van succesvolle navigatie")
                 return True
-            
-            # Navigeer met de navigator
-            return await self.navigator.go_to_products()
+                
+            # Navigeer met juiste methode afhankelijk van mode
+            if self.gebruik_api_mode:
+                logger.logInfo("API mode actief, navigeren via API")
+                return await self.api_handler.navigate_to_products()
+            else:
+                logger.logInfo("Browser mode actief, navigeren via WebDriver")
+                return await self.navigator.go_to_products()
             
         except Exception as e:
             logger.logFout(f"Onverwachte fout bij navigeren naar producten: {e}")
@@ -299,6 +372,7 @@ class RentproHandler:
     async def evalueer_javascript(self, js_code):
         """
         Evalueer JavaScript code op de huidige pagina
+        Werkt alleen in browser-mode, niet in API-mode
         
         Args:
             js_code (str): JavaScript code om te evalueren
@@ -312,12 +386,16 @@ class RentproHandler:
                 logger.logFout("Niet ingelogd bij RentPro")
                 return None
             
-            # Als we mockdata gebruiken, geef een lege string terug
+            # Als we mockdata of API mode gebruiken, is JavaScript niet beschikbaar
             if self.gebruik_mockdata:
                 logger.logInfo("Mockdata modus actief, JavaScript evaluatie niet beschikbaar")
                 return ""
+                
+            if self.gebruik_api_mode:
+                logger.logInfo("API mode actief, JavaScript evaluatie niet beschikbaar")
+                return ""
             
-            # Controleer of driver geïnitialiseerd is
+            # Controleer of driver geïnitialiseerd is (alleen in browser-mode relevant)
             driver = self.driver_manager.get_driver()
             if not driver:
                 logger.logFout("WebDriver niet geïnitialiseerd")

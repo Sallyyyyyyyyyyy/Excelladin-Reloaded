@@ -819,7 +819,7 @@ class RentproTab:
     
     async def haal_producten_op(self):
         """
-        Haal producten op uit Rentpro
+        Haal producten op uit Rentpro via API-mode of browser-mode
         
         Returns:
             list: Lijst van tuples met (product_id, product_naam)
@@ -828,32 +828,47 @@ class RentproTab:
             # Navigeer naar de productpagina
             await rentproHandler.navigeer_naar_producten()
             
-            # Evalueer JavaScript om producten op te halen
-            js_code = """
-            (function() {
-                const rows = document.querySelectorAll('table.grid tbody tr');
-                const products = [];
+            # Controleer of we in API-mode zijn
+            if rentproHandler.gebruik_api_mode:
+                # Haal producten op via API handler
+                logger.logInfo("Producten ophalen via API")
+                producten_lijst = await rentproHandler.api_handler.get_products_list()
                 
-                for (let row of rows) {
-                    const idCell = row.querySelector('td:nth-child(1)');
-                    const nameCell = row.querySelector('td:nth-child(2)');
+                # Converteer naar het verwachte formaat (list of tuples)
+                producten = []
+                for product in producten_lijst:
+                    if "id" in product and "naam" in product:
+                        producten.append((product["id"], product["naam"]))
+                
+                return producten
+            else:
+                # Browser mode - gebruik JavaScript
+                logger.logInfo("Producten ophalen via browser JavaScript")
+                js_code = """
+                (function() {
+                    const rows = document.querySelectorAll('table.grid tbody tr');
+                    const products = [];
                     
-                    if (idCell && nameCell) {
-                        products.push([idCell.textContent.trim(), nameCell.textContent.trim()]);
+                    for (let row of rows) {
+                        const idCell = row.querySelector('td:nth-child(1)');
+                        const nameCell = row.querySelector('td:nth-child(2)');
+                        
+                        if (idCell && nameCell) {
+                            products.push([idCell.textContent.trim(), nameCell.textContent.trim()]);
+                        }
                     }
-                }
+                    
+                    return products;
+                })();
+                """
                 
-                return products;
-            })();
-            """
-            
-            producten = await rentproHandler.evalueer_javascript(js_code)
-            
-            if not producten or not isinstance(producten, list):
-                logger.logFout("Geen producten gevonden of ongeldig formaat")
-                return []
-            
-            return producten
+                producten = await rentproHandler.evalueer_javascript(js_code)
+                
+                if not producten or not isinstance(producten, list):
+                    logger.logFout("Geen producten gevonden of ongeldig formaat")
+                    return []
+                
+                return producten
         except Exception as e:
             logger.logFout(f"Fout bij ophalen producten: {e}")
             return []

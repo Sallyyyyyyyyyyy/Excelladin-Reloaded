@@ -1,5 +1,6 @@
 """
 RentPro package initialization
-Zorgt voor compatibiliteit met de nieuwe vereenvoudigde implementatie
+Dit is een leeg __init__.py bestand voor het rentpro package
+Hiermee wordt het een geldige Python package
 """
-from modules.rentpro_handler import rentproHandler
+# Geen imports hier om circulaire imports te voorkomen

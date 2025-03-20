@@ -1,9 +1,11 @@
 """
 Authenticator voor RentPro integratie
-Verantwoordelijk voor authenticatie en sessiemanagement
-Gebaseerd op het turboturbo script
+Verantwoordelijk voor browser-gebaseerde authenticatie
+BELANGRIJK: In API-mode wordt deze module NIET gebruikt
 """
+import asyncio
 import time
+import threading
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -11,131 +13,136 @@ from modules.logger import logger
 
 class Authenticator:
     """
-    Beheert het inloggen en authenticatieproces voor RentPro
-    Direct overgenomen van het turboturbo script voor maximale betrouwbaarheid
+    Beheert de authenticatie process voor RentPro in browser mode
+    BELANGRIJK: Alleen gebruikt in browser mode, niet in API mode
     """
     
     def __init__(self, driver_manager):
-        """Initialiseer de authenticator"""
+        """
+        Initialiseer de authenticator
+        
+        Args:
+            driver_manager (DriverManager): De driver manager instantie
+        """
         self.driver_manager = driver_manager
-        self.is_authenticated = False
-        self.base_url = "http://metroeventsdc.rentpro5.nl"  # Standaard URL
+        self.base_url = "http://metroeventsdc.rentpro5.nl"
     
-    def set_base_url(self, url):
-        """Stel de basis URL in"""
-        if url:
-            if not url.startswith(('http://', 'https://')):
-                url = f"http://{url}"
-            self.base_url = url
-        return self.base_url
-    
-    async def login(self, gebruikersnaam, wachtwoord, url=None):
-        """Log in bij RentPro exact zoals in het turboturbo script"""
-        # Controleer inloggegevens
-        if not gebruikersnaam or not wachtwoord:
-            logger.logFout("Gebruikersnaam of wachtwoord ontbreekt")
-            return False
+    async def login(self, username, password, url=None):
+        """
+        Log in op RentPro via de browser
         
-        # Stel de basis URL in indien opgegeven
-        if url:
-            self.set_base_url(url)
-        
+        Args:
+            username (str): Gebruikersnaam
+            password (str): Wachtwoord
+            url (str, optional): Base URL voor RentPro
+            
+        Returns:
+            bool: True als inloggen succesvol was, anders False
+        """
         try:
-            # Haal de driver op
+            # Update URL indien opgegeven
+            if url:
+                if not url.startswith(('http://', 'https://')):
+                    url = f"http://{url}"
+                self.base_url = url
+            
+            # Controleer of driver geïnitialiseerd is
             driver = self.driver_manager.get_driver()
             if not driver:
-                logger.logFout("WebDriver niet geïnitialiseerd")
+                logger.logFout("WebDriver niet geïnitialiseerd voor login")
                 return False
             
-            # 1. Navigeer naar de RentPro pagina (exact zoals turboturbo script)
-            logger.logInfo(f"Navigeren naar {self.base_url}")
-            driver.get(self.base_url)
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+            # Creëer een future voor async werking
+            future = asyncio.get_event_loop().create_future()
             
-            # 2. Zoek en schakel over naar iframe indien aanwezig
-            iframes = driver.find_elements(By.TAG_NAME, "iframe")
-            if iframes:
-                logger.logInfo("Iframe gevonden, overschakelen naar iframe")
-                driver.switch_to.frame(iframes[0])
+            def _login_process():
+                try:
+                    with self.driver_manager.get_lock():
+                        # Navigeer naar login pagina
+                        logger.logInfo("Navigeren naar login pagina...")
+                        driver.get(f"{self.base_url}/Account/Login")
+                        
+                        # Wacht op laden body element
+                        WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.TAG_NAME, "body"))
+                        )
+                        
+                        # Controleer huidige URL (voor data: URL probleem)
+                        current_url = driver.current_url
+                        logger.logInfo(f"Huidige URL: {current_url}")
+                        
+                        if current_url.startswith("data:"):
+                            logger.logFout("PROBLEEM: data: URL gedetecteerd!")
+                            future.set_result(False)
+                            return
+                        
+                        # Controleer op iframe en switch indien nodig
+                        iframes = driver.find_elements(By.TAG_NAME, "iframe")
+                        if iframes:
+                            logger.logInfo("Iframe gevonden, overschakelen...")
+                            driver.switch_to.frame(iframes[0])
+                        
+                        # Vul inloggegevens in
+                        logger.logInfo("Inloggegevens invullen...")
+                        username_field = WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.NAME, "UserName"))
+                        )
+                        username_field.clear()
+                        username_field.send_keys(username)
+                        
+                        password_field = WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.NAME, "Password"))
+                        )
+                        password_field.clear()
+                        password_field.send_keys(password)
+                        
+                        # Klik op login knop
+                        logger.logInfo("Login knop klikken...")
+                        login_button = WebDriverWait(driver, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, "//input[@type='submit' and @value='Log in']"))
+                        )
+                        login_button.click()
+                        
+                        # Wacht op pagina laden na login
+                        logger.logInfo("Wachten op login resultaat...")
+                        WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.TAG_NAME, "body"))
+                        )
+                        
+                        # Controleer login succes
+                        page_source = driver.page_source
+                        
+                        if "Log in" in page_source and "UserName" in page_source:
+                            logger.logFout("Login niet succesvol, nog steeds op login pagina")
+                            future.set_result(False)
+                            return
+                        
+                        # Controleer voor succes indicators
+                        success_indicators = [
+                            "Klanten vandaag online", "Dashboard", "Welkom", 
+                            "Uitloggen", "Logout", "Menu"
+                        ]
+                        
+                        if any(indicator in page_source for indicator in success_indicators):
+                            logger.logInfo("Login succesvol! (indicator gevonden)")
+                            future.set_result(True)
+                            return
+                        
+                        # Geen succes indicators gevonden
+                        logger.logFout("Login niet succesvol, geen succes indicators gevonden")
+                        future.set_result(False)
+                
+                except Exception as e:
+                    logger.logFout(f"Fout bij login process: {e}")
+                    future.set_result(False)
             
-            # 3. Vul gebruikersnaam in
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.NAME, "UserName"))
-            ).send_keys(gebruikersnaam)
-            logger.logInfo("Gebruikersnaam ingevuld")
+            # Start thread process
+            thread = threading.Thread(target=_login_process, daemon=True)
+            thread.start()
             
-            # 4. Vul wachtwoord in
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.NAME, "Password"))
-            ).send_keys(wachtwoord)
-            logger.logInfo("Wachtwoord ingevuld")
-            
-            # 5. Klik op login knop
-            WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//input[@type='submit' and @value='Log in']"))
-            ).click()
-            logger.logInfo("Login knop geklikt")
-            
-            # 6. Wacht even voor pagina laden
-            time.sleep(3)
-            
-            # 7. Controleer of login succesvol was
-            if driver.find_elements(By.XPATH, "//*[contains(text(), 'Klanten vandaag online')]"):
-                logger.logInfo("Succesvol ingelogd bij RentPro (Klanten vandaag online gevonden)")
-                self.is_authenticated = True
-                return True
-            
-            # Alternatieve controle
-            success_indicators = ["Dashboard", "Welkom", "Uitloggen", "Logout", "Menu"]
-            page_source = driver.page_source
-            logged_in = any(indicator in page_source for indicator in success_indicators)
-            
-            if logged_in:
-                logger.logInfo("Succesvol ingelogd bij RentPro (Alternatieve indicator gevonden)")
-                self.is_authenticated = True
-                return True
-            
-            logger.logFout("Login niet succesvol, kon niet verifiëren of we zijn ingelogd")
-            return False
-            
-        except Exception as e:
-            logger.logFout(f"Fout bij inloggen: {e}")
-            return False
-    
-    def is_logged_in(self):
-        """Controleer of we zijn ingelogd"""
-        return self.is_authenticated
-    
-    def logout(self):
-        """Uitloggen uit RentPro"""
-        if not self.is_authenticated:
-            return True  # Al uitgelogd
+            # Wacht op resultaat
+            return await asyncio.wait_for(future, timeout=30)
         
-        driver = self.driver_manager.get_driver()
-        if not driver:
-            return False
-        
-        try:
-            # Zoek en klik op uitlog link
-            logout_elements = [
-                "//a[contains(text(), 'Uitloggen')]",
-                "//a[contains(text(), 'Logout')]",
-                "//a[contains(@href, 'logout')]"
-            ]
-            
-            for xpath in logout_elements:
-                elements = driver.find_elements(By.XPATH, xpath)
-                if elements:
-                    elements[0].click()
-                    logger.logInfo("Succesvol uitgelogd uit RentPro")
-                    self.is_authenticated = False
-                    return True
-            
-            # Als geen uitlog link gevonden, log dit
-            logger.logInfo("Geen uitlog link gevonden, sessie wordt gesloten")
-            self.is_authenticated = False
-            return True
-            
         except Exception as e:
-            logger.logFout(f"Fout bij uitloggen: {e}")
+            logger.logFout(f"Fout bij login: {e}")
             return False

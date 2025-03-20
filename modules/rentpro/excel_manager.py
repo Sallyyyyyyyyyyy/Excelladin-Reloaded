@@ -1,177 +1,135 @@
 """
 Excel Manager voor RentPro integratie
-Verantwoordelijk voor de interactie tussen RentPro data en Excel
+Verantwoordelijk voor het beheren van Excel interacties
 """
 from modules.logger import logger
 from modules.excel_handler import excelHandler
 
 class ExcelManager:
     """
-    Beheert de interactie tussen RentPro gegevens en Excel
-    Scheidt de Excel-specifieke logica van de rest van de applicatie
+    Beheert alle Excel-gerelateerde functies voor RentPro integratie
     """
     
     def __init__(self):
-        """
-        Initialiseer de Excel manager
-        """
-        self.excel_handler = excelHandler  # Singleton uit de bestaande applicatie
-        
+        """Initialiseer de Excel manager"""
+        pass
+    
     def is_bestand_geopend(self):
         """
-        Controleert of er een Excel bestand is geopend
+        Controleer of een Excel-bestand is geopend
         
         Returns:
-            bool: True als er een bestand is geopend, anders False
+            bool: True als een bestand is geopend, anders False
         """
-        return self.excel_handler.isBestandGeopend()
-        
-    def update_product_row(self, row_index, product_data, overschrijf_lokaal=True):
-        """
-        Werk een Excel rij bij met product data
-        
-        Args:
-            row_index (int): Index van de rij
-            product_data (dict): Data van het product
-            overschrijf_lokaal (bool): Of lokale data overschreven moet worden
-            
-        Returns:
-            bool: True als update succesvol was, anders False
-        """
-        try:
-            if not self.is_bestand_geopend():
-                logger.logFout("Geen Excel-bestand geopend")
-                return False
-            
-            # Mapping van RentPro velden naar Excel kolommen
-            mapping = {
-                'naam': 'Artikelnaam',
-                'beschrijving': 'Beschrijving',
-                'prijs': 'Prijs',
-                'categorie': 'Categorie',
-                'voorraad': 'Voorraad',
-                'afbeelding_url': 'AfbeeldingURL'
-            }
-            
-            # Update elke kolom
-            for rentpro_veld, excel_kolom in mapping.items():
-                if rentpro_veld not in product_data:
-                    continue
-                    
-                if excel_kolom not in self.excel_handler.kolomNamen:
-                    logger.logWaarschuwing(f"Kolom {excel_kolom} niet gevonden in Excel bestand")
-                    continue
-                
-                waarde = product_data[rentpro_veld]
-                
-                if overschrijf_lokaal:
-                    # Overschrijf lokale data altijd
-                    self.excel_handler.updateCelWaarde(row_index, excel_kolom, waarde)
-                else:
-                    # Alleen bijwerken als de cel leeg is
-                    bestaande_waarde = self.excel_handler.haalCelWaarde(row_index, excel_kolom)
-                    if not bestaande_waarde:
-                        self.excel_handler.updateCelWaarde(row_index, excel_kolom, waarde)
-            
-            return True
-            
-        except Exception as e:
-            logger.logFout(f"Fout bij bijwerken Excel rij {row_index}: {e}")
-            return False
-    
-    def get_product_id(self, row_index):
-        """
-        Haal het product ID op uit een Excel rij
-        
-        Args:
-            row_index (int): Index van de rij
-            
-        Returns:
-            str: Product ID of None als niet gevonden
-        """
-        try:
-            if not self.is_bestand_geopend():
-                logger.logFout("Geen Excel-bestand geopend")
-                return None
-                
-            product_id = self.excel_handler.haalCelWaarde(row_index, "ProductID")
-            if not product_id:
-                logger.logWaarschuwing(f"Geen ProductID gevonden in rij {row_index}")
-                return None
-                
-            return product_id
-            
-        except Exception as e:
-            logger.logFout(f"Fout bij ophalen ProductID uit rij {row_index}: {e}")
-            return None
+        return excelHandler.isBestandGeopend()
     
     def get_row_range(self, start_row=None, end_row=None):
         """
         Bepaal het bereik van rijen om te verwerken
         
         Args:
-            start_row (int, optional): Eerste rij (0-based)
-            end_row (int, optional): Laatste rij (0-based)
+            start_row (int, optional): Eerste rij om te verwerken (0-based)
+            end_row (int, optional): Laatste rij om te verwerken (0-based)
             
         Returns:
-            tuple: (start_rij, eind_rij) of None bij fout
+            tuple: (start_row, end_row) of None bij fout
         """
         try:
-            if not self.is_bestand_geopend():
-                logger.logFout("Geen Excel-bestand geopend")
-                return None
-                
-            # Bepaal totaal aantal rijen
-            aantal_rijen = self.excel_handler.haalRijAantal()
-            if aantal_rijen <= 0:
-                logger.logFout("Excel bestand bevat geen rijen")
-                return None
-                
-            # Bepaal start rij
-            if start_row is None:
-                start_rij = 0
-            else:
-                start_rij = max(0, min(start_row, aantal_rijen - 1))
-                
-            # Bepaal eind rij
-            if end_row is None:
-                eind_rij = aantal_rijen - 1
-            else:
-                eind_rij = max(start_rij, min(end_row, aantal_rijen - 1))
-                
-            return (start_rij, eind_rij)
+            if excelHandler.isBestandGeopend():
+                if start_row is not None and end_row is not None:
+                    # Gebruik opgegeven bereik
+                    return (start_row, end_row)
+                else:
+                    # Gebruik alle rijen met data
+                    total_rows = excelHandler.getTotalRows()
+                    if total_rows > 0:
+                        return (0, total_rows - 1)
             
+            return None
         except Exception as e:
             logger.logFout(f"Fout bij bepalen rijbereik: {e}")
             return None
-
-    def get_rows_with_product_ids(self, start_row=None, end_row=None):
+    
+    def get_product_id(self, row_index):
         """
-        Geef een lijst met rij-indices die een product ID hebben
+        Haal het product ID op uit een rij
         
         Args:
-            start_row (int, optional): Eerste rij (0-based)
-            end_row (int, optional): Laatste rij (0-based)
+            row_index (int): Index van de rij (0-based)
             
         Returns:
-            list: Lijst met rij-indices die een product ID hebben
+            str: Product ID of None bij fout
         """
         try:
-            range_result = self.get_row_range(start_row, end_row)
-            if not range_result:
-                return []
-                
-            start_rij, eind_rij = range_result
-            
-            # Zoek rijen met product IDs
-            rijen_met_id = []
-            for rij in range(start_rij, eind_rij + 1):
-                product_id = self.get_product_id(rij)
-                if product_id:
-                    rijen_met_id.append(rij)
-                    
-            return rijen_met_id
-            
+            # Lees de eerste kolom (ProductID)
+            product_id = excelHandler.getCellValue(row_index, 0)
+            if product_id and isinstance(product_id, (str, int)):
+                return str(product_id)
+            return None
         except Exception as e:
-            logger.logFout(f"Fout bij zoeken naar rijen met product IDs: {e}")
-            return []
+            logger.logWaarschuwing(f"Kon product ID niet lezen van rij {row_index}: {e}")
+            return None
+    
+    def update_product_row(self, row_index, product_data, overschrijf_lokaal=False):
+        """
+        Update een rij met productgegevens
+        
+        Args:
+            row_index (int): Index van de rij om bij te werken (0-based)
+            product_data (dict): Dictionary met productgegevens
+            overschrijf_lokaal (bool): Of bestaande waarden overschreven moeten worden
+            
+        Returns:
+            bool: True als update succesvol was, anders False
+        """
+        try:
+            # Controleer of we geldige product data hebben
+            if not product_data or not isinstance(product_data, dict):
+                logger.logWaarschuwing(f"Ongeldige product data voor rij {row_index}")
+                return False
+            
+            # Haal de huidige ID op en vergelijk
+            current_id = self.get_product_id(row_index)
+            if current_id != product_data.get('id'):
+                logger.logWaarschuwing(f"Product ID mismatch: {current_id} != {product_data.get('id')}")
+                return False
+            
+            # Update de relevante cellen
+            # Kolom 1: Naam
+            if 'naam' in product_data:
+                if overschrijf_lokaal or not excelHandler.getCellValue(row_index, 1):
+                    excelHandler.setCellValue(row_index, 1, product_data['naam'])
+            
+            # Kolom 2: Beschrijving
+            if 'beschrijving' in product_data:
+                if overschrijf_lokaal or not excelHandler.getCellValue(row_index, 2):
+                    excelHandler.setCellValue(row_index, 2, product_data['beschrijving'])
+            
+            # Kolom 3: Prijs
+            if 'prijs' in product_data:
+                if overschrijf_lokaal or not excelHandler.getCellValue(row_index, 3):
+                    excelHandler.setCellValue(row_index, 3, product_data['prijs'])
+            
+            # Kolom 4: Categorie
+            if 'categorie' in product_data:
+                if overschrijf_lokaal or not excelHandler.getCellValue(row_index, 4):
+                    excelHandler.setCellValue(row_index, 4, product_data['categorie'])
+            
+            # Kolom 5: Voorraad
+            if 'voorraad' in product_data:
+                if overschrijf_lokaal or not excelHandler.getCellValue(row_index, 5):
+                    excelHandler.setCellValue(row_index, 5, product_data['voorraad'])
+            
+            # Kolom 6: Afbeelding URL
+            if 'afbeelding_url' in product_data:
+                if overschrijf_lokaal or not excelHandler.getCellValue(row_index, 6):
+                    excelHandler.setCellValue(row_index, 6, product_data['afbeelding_url'])
+            
+            # Kolom 7: Laatst bijgewerkt
+            if 'last_updated' in product_data:
+                excelHandler.setCellValue(row_index, 7, product_data['last_updated'])
+            
+            return True
+        except Exception as e:
+            logger.logFout(f"Fout bij updaten rij {row_index}: {e}")
+            return False

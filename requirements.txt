@@ -1,7 +1,14 @@
+# API afhankelijkheden (browserloze modus)
+requests>=2.28.0
+beautifulsoup4>=4.10.0
+aiohttp>=3.8.0
+
+# Browser afhankelijkheden (fallback modus)
+selenium>=4.1.0
+webdriver_manager>=3.8.6
 pyppeteer==1.0.2
-asyncio==3.4.3
+
+# Data verwerking
 pandas>=1.3.0
 openpyxl>=3.0.7
-aiohttp>=3.8.0
-beautifulsoup4>=4.10.0
-selenium>=4.1.0
+asyncio==3.4.3

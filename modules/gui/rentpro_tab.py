@@ -114,8 +114,10 @@ class RentproTab:
         gebruikersnaamEntry = tk.Entry(
             gebruikersnaamFrame,
             textvariable=self.gebruikersnaamVar,
-            **STIJLEN["entry"],
-            width=30
+            width=30,
+            bg="#000080",  # Donkerblauw
+            fg="#FFFF00",  # Geel
+            insertbackground="#FFFF00"  # Cursor kleur
         )
         gebruikersnaamEntry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
@@ -136,8 +138,10 @@ class RentproTab:
         wachtwoordEntry = tk.Entry(
             wachtwoordFrame,
             textvariable=self.wachtwoordVar,
-            **STIJLEN["entry"],
             width=30,
+            bg="#000080",  # Donkerblauw
+            fg="#FFFF00",  # Geel
+            insertbackground="#FFFF00",  # Cursor kleur
             show="*"
         )
         wachtwoordEntry.pack(side=tk.LEFT, fill=tk.X, expand=True)
@@ -159,8 +163,10 @@ class RentproTab:
         urlEntry = tk.Entry(
             urlFrame,
             textvariable=self.urlVar,
-            **STIJLEN["entry"],
-            width=30
+            width=30,
+            bg="#000080",  # Donkerblauw
+            fg="#FFFF00",  # Geel
+            insertbackground="#FFFF00"  # Cursor kleur
         )
         urlEntry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
@@ -250,22 +256,64 @@ class RentproTab:
         )
         productenLabel.pack(fill=tk.X)
         
-        # Scrollbaar frame voor producten
-        productenScrollFrame = tk.Frame(self.productenFrame, background=KLEUREN["achtergrond"])
-        productenScrollFrame.pack(fill=tk.BOTH, expand=True, pady=5)
+        # Opmerking dat dit alleen voor preview is
+        previewLabel = tk.Label(
+            self.productenFrame,
+            text="(Alleen voor weergave/preview)",
+            **STIJLEN["label"],
+            font=("Arial", 8, "italic")
+        )
+        previewLabel.pack(fill=tk.X)
         
-        productenScroll = tk.Scrollbar(productenScrollFrame)
-        productenScroll.pack(side=tk.RIGHT, fill=tk.Y)
+        # Eerste 3 producten
+        eersteProductenFrame = tk.Frame(self.productenFrame, background=KLEUREN["achtergrond"])
+        eersteProductenFrame.pack(fill=tk.X, pady=(5, 2))
         
-        self.productenText = tk.Text(
-            productenScrollFrame,
+        eersteProductenLabel = tk.Label(
+            eersteProductenFrame,
+            text="Dit zijn de eerste 3 producten:",
+            **STIJLEN["label"],
+            anchor=tk.W
+        )
+        eersteProductenLabel.pack(fill=tk.X)
+        
+        eersteProductenScroll = tk.Scrollbar(eersteProductenFrame)
+        eersteProductenScroll.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.eersteProductenText = tk.Text(
+            eersteProductenFrame,
             **STIJLEN["entry"],
-            height=6,
-            yscrollcommand=productenScroll.set,
+            height=3,
+            yscrollcommand=eersteProductenScroll.set,
             state=tk.DISABLED
         )
-        self.productenText.pack(fill=tk.BOTH, expand=True)
-        productenScroll.config(command=self.productenText.yview)
+        self.eersteProductenText.pack(fill=tk.X)
+        eersteProductenScroll.config(command=self.eersteProductenText.yview)
+        
+        # Laatste 3 producten
+        laatsteProductenFrame = tk.Frame(self.productenFrame, background=KLEUREN["achtergrond"])
+        laatsteProductenFrame.pack(fill=tk.X, pady=(2, 5))
+        
+        laatsteProductenLabel = tk.Label(
+            laatsteProductenFrame,
+            text="Dit zijn de laatste 3 producten:",
+            **STIJLEN["label"],
+            anchor=tk.W
+        )
+        laatsteProductenLabel.pack(fill=tk.X)
+        
+        laatsteProductenScroll = tk.Scrollbar(laatsteProductenFrame)
+        laatsteProductenScroll.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.laatsteProductenText = tk.Text(
+            laatsteProductenFrame,
+            **STIJLEN["entry"],
+            height=3,
+            yscrollcommand=laatsteProductenScroll.set,
+            state=tk.DISABLED
+        )
+        self.laatsteProductenText.pack(fill=tk.X)
+        laatsteProductenScroll.config(command=self.laatsteProductenText.yview)
         
         # Overschrijf lokale data optie
         self.overschrijfVar = tk.BooleanVar(value=False)
@@ -461,6 +509,40 @@ class RentproTab:
         self.resultaatText.pack(fill=tk.BOTH, expand=True)
         resultaatScroll.config(command=self.resultaatText.yview)
         
+        # Live logging frame in de voet
+        logFrame = tk.Frame(
+            self.container,
+            background=KLEUREN["achtergrond"],
+            padx=10,
+            pady=10,
+            relief=tk.GROOVE,
+            borderwidth=1
+        )
+        logFrame.pack(fill=tk.X, pady=10, side=tk.BOTTOM)
+        
+        # Titel voor live logging
+        logLabel = tk.Label(
+            logFrame,
+            text="Live Logging",
+            **label_stijl,
+            font=("Arial", 10, "bold")
+        )
+        logLabel.pack(fill=tk.X)
+        
+        # Scrollbaar tekstveld voor live logging
+        logScroll = tk.Scrollbar(logFrame)
+        logScroll.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.logText = tk.Text(
+            logFrame,
+            **STIJLEN["entry"],
+            height=3,
+            yscrollcommand=logScroll.set,
+            state=tk.DISABLED
+        )
+        self.logText.pack(fill=tk.X)
+        logScroll.config(command=self.logText.yview)
+        
         # Vul opgeslagen inloggegevens in als ze beschikbaar zijn
         if self.opgeslagen_gebruikersnaam:
             self.gebruikersnaamVar.set(self.opgeslagen_gebruikersnaam)
@@ -478,6 +560,7 @@ class RentproTab:
         
         # Initiële status
         self.updateResultaat("Gereed voor synchronisatie met Rentpro")
+        self.updateLogText("Live logging geactiveerd")
     
     def haalGeselecteerdBereik(self):
         """
@@ -513,6 +596,18 @@ class RentproTab:
         self.resultaatText.insert(tk.END, tekst + "\n")
         self.resultaatText.see(tk.END)
         self.resultaatText.config(state=tk.DISABLED)
+    
+    def updateLogText(self, tekst):
+        """
+        Voeg tekst toe aan het live logging veld
+        
+        Args:
+            tekst (str): De tekst om toe te voegen
+        """
+        self.logText.config(state=tk.NORMAL)
+        self.logText.insert(tk.END, tekst + "\n")
+        self.logText.see(tk.END)  # Scroll naar nieuwste bericht
+        self.logText.config(state=tk.DISABLED)
     
     def toon_overschrijf_waarschuwing(self):
         """Toon een waarschuwing als de gebruiker lokale data wil overschrijven"""
@@ -569,6 +664,7 @@ class RentproTab:
         self.voortgangLabel.config(text="Bezig met synchroniseren...")
         self.app.updateStatus("Bezig met Rentpro synchronisatie...")
         self.updateResultaat(f"Synchronisatie gestart {'(overschrijven)' if overschrijf_lokaal else '(alleen lege velden)'}")
+        self.updateLogText(f"Synchronisatie gestart met {url}")
         
         # Disable start knop tijdens verwerking
         self.startButton.config(state=tk.DISABLED)
@@ -603,33 +699,40 @@ class RentproTab:
         try:
             # Update UI
             self.update_ui_status("Verbinding maken met Rentpro...")
+            self.updateLogText("Verbinding maken met Rentpro...")
             
             # Initialiseer de sessie
             await rentproHandler.initialize()
             
             # Login
             self.update_ui_status("Inloggen bij Rentpro...")
+            self.updateLogText("Inloggen bij Rentpro...")
             login_success = await rentproHandler.login(gebruikersnaam, wachtwoord, url)
             
             if not login_success:
                 self.update_ui_error("Inloggen bij Rentpro mislukt. Controleer je inloggegevens.")
+                self.updateLogText("Inloggen bij Rentpro mislukt. Controleer je inloggegevens.")
                 return
             
             # Haal producten op
             self.update_ui_status("Ophalen van productgegevens...")
+            self.updateLogText("Ophalen van productgegevens...")
             success = await rentproHandler.haal_producten_op(overschrijf_lokaal, bereik)
             
             if success:
                 self.update_ui_success("Synchronisatie succesvol afgerond")
+                self.updateLogText("Synchronisatie succesvol afgerond")
                 
                 # Vraag of gebruiker het resultaat wil opslaan
                 self.app.root.after(0, lambda: self.vraag_opslaan())
             else:
                 self.update_ui_error("Fout bij ophalen van productgegevens")
+                self.updateLogText("Fout bij ophalen van productgegevens")
                 
         except Exception as e:
             logger.logFout(f"Fout bij synchronisatie: {e}")
             self.update_ui_error(f"Fout bij synchronisatie: {str(e)}")
+            self.updateLogText(f"Fout bij synchronisatie: {str(e)}")
         finally:
             # Sluit de sessie
             await rentproHandler.close()
@@ -679,7 +782,37 @@ class RentproTab:
         self.is_bezig = False
         self.voortgangBalk.stop()
         self.startButton.config(state=tk.NORMAL)
-        
+    
+    def vraag_opslaan(self):
+        """Vraag of de gebruiker het resultaat wil opslaan"""
+        if not self.is_bezig:  # Voorkom dubbele dialogen
+            popup = StijlvollePopup(
+                self.app.root,
+                "Opslaan",
+                "Synchronisatie succesvol. Wil je de wijzigingen opslaan?",
+                popup_type="vraag",
+                actie_knoppen=[
+                    {'tekst': 'Ja', 'commando': lambda: popup.ja_actie(), 'primair': True},
+                    {'tekst': 'Nee', 'commando': lambda: popup.nee_actie()}
+                ]
+            )
+            
+            if popup.wacht_op_antwoord():
+                if excelHandler.slaOp():
+                    self.app.updateStatus("Wijzigingen opgeslagen")
+                    self.app.toonSuccesmelding("Succes", "Wijzigingen zijn opgeslagen")
+                    self.updateResultaat("Wijzigingen opgeslagen in Excel-bestand")
+                    self.updateLogText("Wijzigingen opgeslagen in Excel-bestand")
+                else:
+                    self.app.updateStatus("Fout bij opslaan")
+                    self.app.toonFoutmelding("Fout", "Kon wijzigingen niet opslaan")
+                    self.updateResultaat("FOUT: Kon wijzigingen niet opslaan")
+                    self.updateLogText("FOUT: Kon wijzigingen niet opslaan")
+            else:
+                self.updateResultaat("Wijzigingen NIET opgeslagen")
+                self.updateLogText("Wijzigingen NIET opgeslagen")
+                self.app.updateStatus("Wijzigingen niet opgeslagen")
+    
     def login_zonder_synchronisatie(self):
         """Log in bij Rentpro zonder synchronisatie te starten"""
         if self.is_bezig:
@@ -712,6 +845,7 @@ class RentproTab:
         self.voortgangLabel.config(text="Bezig met inloggen...")
         self.app.updateStatus("Bezig met inloggen bij Rentpro...")
         self.updateResultaat("Inloggen bij Rentpro...")
+        self.updateLogText("Inloggen bij Rentpro...")
         
         # Disable knoppen tijdens verwerking
         self.inlogButton.config(state=tk.DISABLED)
@@ -743,35 +877,43 @@ class RentproTab:
         try:
             # Update UI
             self.update_ui_status("Verbinding maken met Rentpro...")
+            self.updateLogText("Verbinding maken met Rentpro...")
             
             # Initialiseer de sessie
             await rentproHandler.initialize()
             
             # Login
             self.update_ui_status("Inloggen bij Rentpro...")
+            self.updateLogText("Inloggen bij Rentpro...")
             login_success = await rentproHandler.login(gebruikersnaam, wachtwoord, url)
             
             if not login_success:
                 self.update_ui_error("Inloggen bij Rentpro mislukt. Controleer je inloggegevens.")
+                self.updateLogText("Inloggen bij Rentpro mislukt. Controleer je inloggegevens.")
                 return
             
             # Update status
             self.is_ingelogd = True
             self.app.root.after(0, lambda: self.statusLabel.config(text="Ingelogd ✓", fg="#00AA00"))
             self.update_ui_success("Succesvol ingelogd bij Rentpro")
+            self.updateLogText("Succesvol ingelogd bij Rentpro")
             
             # Haal producten op en toon overzicht
             self.update_ui_status("Ophalen van productenoverzicht...")
+            self.updateLogText("Ophalen van productenoverzicht...")
             producten = await self.haal_producten_op()
             if producten:
                 self.app.root.after(0, lambda: self.toon_product_overzicht(producten))
                 self.update_ui_success("Productenoverzicht bijgewerkt")
+                self.updateLogText("Productenoverzicht bijgewerkt")
             else:
                 self.update_ui_error("Geen producten gevonden of fout bij ophalen")
+                self.updateLogText("Geen producten gevonden of fout bij ophalen")
                 
         except Exception as e:
             logger.logFout(f"Fout bij inloggen: {e}")
             self.update_ui_error(f"Fout bij inloggen: {str(e)}")
+            self.updateLogText(f"Fout bij inloggen: {str(e)}")
         finally:
             # Sluit de sessie
             await rentproHandler.close()
@@ -788,7 +930,7 @@ class RentproTab:
     
     def toon_product_overzicht(self, producten):
         """
-        Toon een overzicht van producten in het productenText veld
+        Toon een overzicht van producten in de gescheiden tekstvelden
         
         Args:
             producten (list): Lijst van tuples met (product_id, product_naam)
@@ -796,26 +938,29 @@ class RentproTab:
         if not producten:
             return
         
-        # Maak het tekstveld bewerkbaar
-        self.productenText.config(state=tk.NORMAL)
-        self.productenText.delete(1.0, tk.END)
+        # Maak het eerste tekstveld bewerkbaar
+        self.eersteProductenText.config(state=tk.NORMAL)
+        self.eersteProductenText.delete(1.0, tk.END)
         
         # Toon de eerste 3 producten
         eerste_producten = producten[:3]
         for product_id, product_naam in eerste_producten:
-            self.productenText.insert(tk.END, f"{product_id:<10} {product_naam}\n")
+            self.eersteProductenText.insert(tk.END, f"{product_id:<10} {product_naam}\n")
         
-        # Voeg zonsymbool toe als scheiding
-        if len(producten) > 6:
-            self.productenText.insert(tk.END, "\n☀️ ... ☀️\n\n")
+        # Maak het eerste tekstveld weer alleen-lezen
+        self.eersteProductenText.config(state=tk.DISABLED)
+        
+        # Maak het tweede tekstveld bewerkbaar
+        self.laatsteProductenText.config(state=tk.NORMAL)
+        self.laatsteProductenText.delete(1.0, tk.END)
         
         # Toon de laatste 3 producten
         laatste_producten = producten[-3:] if len(producten) > 3 else []
         for product_id, product_naam in laatste_producten:
-            self.productenText.insert(tk.END, f"{product_id:<10} {product_naam}\n")
+            self.laatsteProductenText.insert(tk.END, f"{product_id:<10} {product_naam}\n")
         
-        # Maak het tekstveld weer alleen-lezen
-        self.productenText.config(state=tk.DISABLED)
+        # Maak het tweede tekstveld weer alleen-lezen
+        self.laatsteProductenText.config(state=tk.DISABLED)
     
     async def haal_producten_op(self):
         """
@@ -832,6 +977,7 @@ class RentproTab:
             if rentproHandler.gebruik_api_mode:
                 # Haal producten op via API handler
                 logger.logInfo("Producten ophalen via API")
+                self.updateLogText("Producten ophalen via API")
                 producten_lijst = await rentproHandler.api_handler.get_products_list()
                 
                 # Converteer naar het verwachte formaat (list of tuples)
@@ -844,6 +990,7 @@ class RentproTab:
             else:
                 # Browser mode - gebruik JavaScript
                 logger.logInfo("Producten ophalen via browser JavaScript")
+                self.updateLogText("Producten ophalen via browser JavaScript")
                 js_code = """
                 (function() {
                     const rows = document.querySelectorAll('table.grid tbody tr');
@@ -866,36 +1013,11 @@ class RentproTab:
                 
                 if not producten or not isinstance(producten, list):
                     logger.logFout("Geen producten gevonden of ongeldig formaat")
+                    self.updateLogText("Geen producten gevonden of ongeldig formaat")
                     return []
                 
                 return producten
         except Exception as e:
             logger.logFout(f"Fout bij ophalen producten: {e}")
+            self.updateLogText(f"Fout bij ophalen producten: {e}")
             return []
-    
-    def vraag_opslaan(self):
-        """Vraag of de gebruiker het resultaat wil opslaan"""
-        if not self.is_bezig:  # Voorkom dubbele dialogen
-            popup = StijlvollePopup(
-                self.app.root,
-                "Opslaan",
-                "Synchronisatie succesvol. Wil je de wijzigingen opslaan?",
-                popup_type="vraag",
-                actie_knoppen=[
-                    {'tekst': 'Ja', 'commando': lambda: popup.ja_actie(), 'primair': True},
-                    {'tekst': 'Nee', 'commando': lambda: popup.nee_actie()}
-                ]
-            )
-            
-            if popup.wacht_op_antwoord():
-                if excelHandler.slaOp():
-                    self.app.updateStatus("Wijzigingen opgeslagen")
-                    self.app.toonSuccesmelding("Succes", "Wijzigingen zijn opgeslagen")
-                    self.updateResultaat("Wijzigingen opgeslagen in Excel-bestand")
-                else:
-                    self.app.updateStatus("Fout bij opslaan")
-                    self.app.toonFoutmelding("Fout", "Kon wijzigingen niet opslaan")
-                    self.updateResultaat("FOUT: Kon wijzigingen niet opslaan")
-            else:
-                self.updateResultaat("Wijzigingen NIET opgeslagen")
-                self.app.updateStatus("Wijzigingen niet opgeslagen")

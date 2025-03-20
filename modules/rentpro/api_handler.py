@@ -9,6 +9,8 @@ import asyncio
 import re
 import json
 import requests
+import time
+from datetime import datetime
 from bs4 import BeautifulSoup
 from modules.logger import logger
 
@@ -131,19 +133,18 @@ class ApiHandler:
             logger.logFout(f"Kritieke fout bij login: {e}")
             return False
     
-    async def navigate_to_products(self):
+    async def wait_on_product_page(self):
         """
-        Navigeer naar de productenpagina via HTTP
+        Controleert of we op de RentPro productpagina zijn en wacht op verdere acties
         
         Returns:
-            bool: True bij success, anders False
+            bool: True als verificatie succesvol is, anders False
         """
         try:
-            if not self.logged_in:
-                logger.logFout("Niet ingelogd bij navigeren naar producten")
-                return False
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            logger.logInfo(f"[{timestamp}] [LOCATION] Verificatie van productpagina gestart")
             
-            # Navigeer naar producten pagina
+            # Haal huidige pagina op
             products_url = f"{self.base_url}/Product"
             response = self.session.get(
                 products_url,
@@ -151,15 +152,104 @@ class ApiHandler:
             )
             
             if response.status_code != 200:
-                logger.logFout(f"Fout bij navigeren naar producten: {response.status_code}")
+                logger.logFout(f"[{timestamp}] [LOCATION] Fout bij verificatie productpagina: {response.status_code}")
                 return False
             
-            # Success
-            logger.logInfo("Succesvol genavigeerd naar productenpagina")
+            # Parse HTML en controleer op productpagina elementen
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Controleer op tabellen met class="grid"
+            grid_tables = soup.select('table.grid')
+            if not grid_tables:
+                logger.logWaarschuwing(f"[{timestamp}] [LOCATION] Geen product tabellen gevonden")
+                return False
+                
+            # Controleer op RentPro headers of menu-elementen
+            rentpro_elements = soup.select('header .navbar') or soup.select('#main-menu') or soup.select('.rentpro-header')
+            if not rentpro_elements:
+                logger.logWaarschuwing(f"[{timestamp}] [LOCATION] Geen RentPro menu-elementen gevonden")
+                return False
+            
+            # Controleer op productpagina specifieke elementen
+            product_indicators = ["Product", "Producten", "Artikelen", "Artikelnummer"]
+            page_text = soup.get_text()
+            if not any(indicator in page_text for indicator in product_indicators):
+                logger.logWaarschuwing(f"[{timestamp}] [LOCATION] Geen productpagina indicators gevonden")
+                return False
+            
+            logger.logInfo(f"[{timestamp}] [LOCATION] ✅ Verificatie succesvol: We zijn op de productpagina")
             return True
             
         except Exception as e:
-            logger.logFout(f"Fout bij navigeren naar producten: {e}")
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            logger.logFout(f"[{timestamp}] [LOCATION] Fout bij verificatie productpagina: {e}")
+            return False
+    
+    async def navigate_to_products(self, wait_after_navigation=False):
+        """
+        Navigeer naar de productenpagina via HTTP
+        
+        Args:
+            wait_after_navigation (bool): Als True, blijf op de pagina na succesvolle navigatie
+            
+        Returns:
+            bool: True bij success, anders False
+        """
+        try:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            if not self.logged_in:
+                logger.logFout(f"[{timestamp}] Niet ingelogd bij navigeren naar producten")
+                return False
+            
+            # Navigeer naar producten pagina
+            logger.logInfo(f"[{timestamp}] Navigeren naar productenpagina...")
+            products_url = f"{self.base_url}/Product"
+            response = self.session.get(
+                products_url,
+                headers=self.headers
+            )
+            
+            if response.status_code != 200:
+                logger.logFout(f"[{timestamp}] Fout bij navigeren naar producten: {response.status_code}")
+                return False
+            
+            # Success
+            logger.logInfo(f"[{timestamp}] ✅ Succesvol genavigeerd naar productenpagina")
+            
+            # Als wait_after_navigation is True, toon product informatie en wacht
+            if wait_after_navigation:
+                # Haal productlijst op
+                products = await self.get_products_list()
+                
+                if products:
+                    # Toon eerste drie en laatste drie producten
+                    first_three = products[:3]
+                    last_three = products[-3:] if len(products) > 3 else []
+                    
+                    logger.logInfo(f"[{timestamp}] Eerste drie producten:")
+                    for product in first_three:
+                        logger.logInfo(f"[{timestamp}]   - ID: {product['id']}, Naam: {product['naam']}")
+                    
+                    if last_three and last_three != first_three:
+                        logger.logInfo(f"[{timestamp}] Laatste drie producten:")
+                        for product in last_three:
+                            logger.logInfo(f"[{timestamp}]   - ID: {product['id']}, Naam: {product['naam']}")
+                
+                # Verifieer dat we op de productpagina zijn
+                is_on_product_page = await self.wait_on_product_page()
+                
+                if is_on_product_page:
+                    logger.logInfo(f"[{timestamp}] [WAITING] Systeem staat klaar voor nieuwe instructies op productpagina")
+                    logger.logInfo(f"[{timestamp}] [WAITING] Sessie blijft actief, wachtend op commando's...")
+                else:
+                    logger.logWaarschuwing(f"[{timestamp}] [WAITING] Kon niet bevestigen dat we op de productpagina zijn")
+            
+            return True
+            
+        except Exception as e:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            logger.logFout(f"[{timestamp}] Fout bij navigeren naar producten: {e}")
             return False
     
     async def get_products_list(self):
@@ -185,21 +275,44 @@ class ApiHandler:
                 logger.logFout(f"Fout bij ophalen productlijst: {response.status_code}")
                 return []
             
-            # Parse HTML en zoek producten
+            # Parse HTML en zoek producten tabel
             soup = BeautifulSoup(response.text, 'html.parser')
-            product_rows = soup.select('table.grid tbody tr')
             
+            # Zoek de producten tabel (heeft class noBold gvItems)
+            product_table = soup.select_one('table.gvItems')
+            if not product_table:
+                product_table = soup.select_one('table.noBold')
+                if not product_table:
+                    logger.logWaarschuwing("Geen producttabel gevonden in HTML")
+                    return []
+            
+            # Zoek alle product rijen (alternating even/oneven classes)
+            product_rows = product_table.select('tr.even, tr.oneven')
             if not product_rows:
-                logger.logWaarschuwing("Geen productrijen gevonden in HTML")
+                logger.logWaarschuwing("Geen productrijen gevonden in tabel")
                 return []
             
             # Extraheer product IDs en namen
             products = []
             for row in product_rows:
                 cells = row.select('td')
-                if len(cells) >= 2:
-                    product_id = cells[0].get_text(strip=True)
-                    product_name = cells[1].get_text(strip=True)
+                if len(cells) >= 4:  # Zorg dat er genoeg kolommen zijn
+                    # Eerste kolom (0) bevat ID, vierde kolom (3) bevat naam
+                    product_id_cell = cells[0]
+                    product_name_cell = cells[3]
+                    
+                    # Haal de waarden uit de cellen
+                    # Merk op dat de ID/naam in een <a> tag kunnen zitten
+                    product_id = product_id_cell.get_text(strip=True)
+                    product_name = product_name_cell.get_text(strip=True)
+                    
+                    # Als er geen tekst is, probeer dan de inhoud van een <a> tag
+                    if not product_id and product_id_cell.find('a'):
+                        product_id = product_id_cell.find('a').get_text(strip=True)
+                    
+                    if not product_name and product_name_cell.find('a'):
+                        product_name = product_name_cell.find('a').get_text(strip=True)
+                    
                     if product_id and product_name:
                         products.append({
                             'id': product_id,
@@ -228,31 +341,39 @@ class ApiHandler:
                 logger.logFout("Niet ingelogd bij ophalen productdetails")
                 return None
             
-            # Haal productdetails op
-            product_url = f"{self.base_url}/Product/Details/{product_id}"
+            # Haal productdetails op (probeer eerst Edit pagina, dan Details pagina)
+            edit_url = f"{self.base_url}/Product/Edit/{product_id}"
             response = self.session.get(
-                product_url,
-                headers=self.headers
+                edit_url,
+                headers=self.headers,
+                allow_redirects=True
             )
             
             if response.status_code != 200:
-                logger.logFout(f"Fout bij ophalen productdetails: {response.status_code}")
-                return None
+                # Probeer de details pagina als edit niet werkt
+                details_url = f"{self.base_url}/Product/Details/{product_id}"
+                response = self.session.get(
+                    details_url, 
+                    headers=self.headers
+                )
+                
+                if response.status_code != 200:
+                    logger.logFout(f"Fout bij ophalen productdetails: {response.status_code}")
+                    return None
             
             # Parse HTML en extraheer productgegevens
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # Mock implementatie: haal productgegevens uit HTML
-            # In een echte implementatie zou je specifieke velden extraheren
+            # Zoek belangrijke velden op basis van id of label
             product_data = {
                 'id': product_id,
-                'naam': self._extract_field_value(soup, "Naam"),
-                'beschrijving': self._extract_field_value(soup, "Beschrijving") or self._extract_field_value(soup, "Omschrijving"),
-                'prijs': self._extract_field_value(soup, "Prijs") or "0.00",
-                'categorie': self._extract_field_value(soup, "Categorie") or "Onbekend",
-                'voorraad': self._extract_field_value(soup, "Voorraad") or "0",
+                'naam': self._extract_input_value(soup, 'Product_Name') or self._extract_field_value(soup, "Naam"),
+                'beschrijving': self._extract_input_value(soup, 'Product_Decription') or self._extract_field_value(soup, "Omschrijving"),
+                'prijs': self._extract_input_value(soup, 'ProductPrice') or self._extract_field_value(soup, "Prijs") or "0.00",
+                'categorie': self._extract_input_value(soup, 'Product_CategoryID') or self._extract_field_value(soup, "Categorie") or "Onbekend",
+                'voorraad': self._extract_input_value(soup, 'Stock') or self._extract_field_value(soup, "Voorraad") or "0",
                 'afbeelding_url': self._extract_image_url(soup),
-                'last_updated': self._extract_field_value(soup, "Laatst bijgewerkt") or self._get_current_datetime()
+                'last_updated': time.strftime("%Y-%m-%d %H:%M:%S")
             }
             
             return product_data
@@ -260,6 +381,29 @@ class ApiHandler:
         except Exception as e:
             logger.logFout(f"Fout bij ophalen productdetails voor {product_id}: {e}")
             return None
+    
+    def _extract_input_value(self, soup, input_id):
+        """Helper methode om waarde van input veld te extraheren op basis van ID"""
+        try:
+            input_elem = soup.find('input', id=input_id)
+            if input_elem and input_elem.has_attr('value'):
+                return input_elem['value']
+                
+            # Probeer ook textarea
+            textarea = soup.find('textarea', id=input_id)
+            if textarea:
+                return textarea.get_text(strip=True)
+                
+            # Probeer ook select
+            select = soup.find('select', id=input_id)
+            if select:
+                selected_option = select.find('option', selected=True)
+                if selected_option:
+                    return selected_option.get_text(strip=True)
+            
+            return ""
+        except Exception:
+            return ""
     
     def _extract_field_value(self, soup, field_name):
         """Helper methode om veldwaarde te extraheren uit HTML"""

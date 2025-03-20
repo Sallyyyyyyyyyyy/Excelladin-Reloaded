@@ -1,31 +1,1067 @@
 
-<html lang="nl">
+
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <meta name="msapplication-config" content="none" /> 
-    <title>Log in DC - Rentpro backoffice</title>
-    <link href="/favicon.ico" rel="shortcut icon" type="image/x-icon">
-    <link href="/favicon.ico" rel="icon" type="image/x-icon">
-    <meta name="viewport" content="width=device-width">
+    <title>Home DC - Metro Events</title>
+    <link href="/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    <link href="/favicon.ico" rel="icon" type="image/x-icon" />
+    <link rel="stylesheet" href="/content/chosen/chosen.css" />
+    <meta name="viewport" content="width=device-width" />
     <meta name="ROBOTS" content="NOINDEX,NOFOLLOW">
-    <link rel="stylesheet" href="/Content/Site.css" />
+    <script src="/bundles/modernizr?v=FYgoHrSvNmYV0UHIgj4kVHuKxGsq2XU9NX-0vez2AtM1"></script>
+
+        <script src="/Scripts/jquery-3.2.1.min.js"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css" />
+    <link rel="stylesheet" href="/Content/sapling/tree.css" />
+    <link href="/Company/_Template/customized.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" rel="stylesheet">
+    <!--De oude manier van ophalen<link rel="stylesheet" href="~/Content/css/font-awesome.min.css"> -->
+    
+    <script type="text/javascript" src="/content/chosen/chosen.jquery.js"></script>
+    <script type="text/javascript" src="/content/js/Main.js"></script>
+    <script type="text/javascript" src="/Content/sapling/jquery.sapling.js"></script>
+    <!--Begin Datepicker-->
+    <link rel="stylesheet" id="themeCSS" href="/Content/DateSliders/classic.css">
+    <script type="text/javascript" src="/Content/DateSliders/lib/jquery.mousewheel.min.js"></script>
+    <script type="text/javascript" src="/Content/DateSliders/jQAllRangeSliders-min.js"></script>
+    <script type="text/javascript" src="/Content/DateSliders/jQAllRangeSliders-withRuler-min.js"></script>
+    <!--Einde Datepicker-->
+    <link rel="stylesheet" href="/Content/Site.css?v=9210" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jodit/3.2.34/jodit.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jodit/3.2.34/jodit.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.1/moment-with-locales.min.js"></script>
+    
+    <style>
+        .feedbackButtonBox {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            border: 2px solid black;
+            text-align: center;
+            width: 18px;
+            height: 18px;
+            z-index: 1000;
+            background: white;
+            cursor: pointer;
+            line-height: 18px;
+        }
+
+        .feedbackTextInBox {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #ui-id-1 {
+            height: 250px !important;
+        }
+
+        #feedback-textarea {
+            height: 150px;
+        }
+    </style>
 </head>
+<body>
+    <div class="feedbackButtonBox"> <span class="feedbackTextInBox">!</span> </div>
+<script>
+        $(document).ready(function () {
+            var scrollTop = 0;
+            $(window).scroll(function () {
+                scrollTop = $(window).scrollTop();
+                $('.counter').html(scrollTop);
+
+                if (scrollTop >= 100) {
+                    $('.headerTop').addClass('scrolled-nav');
+                    $('.DSlogo').addClass('logo-hidden');
+                    $('#user').addClass('user-hidden');
+                    $('.newAfrondButton').addClass('newAfrondButtonTop');
+                    $('#rentprologo').addClass('logo-left');
+                    $('#menu').addClass('menu-scroll');
+
+                } else if (scrollTop < 100) {
+                    $('.headerTop').removeClass('scrolled-nav');
+                    $('.DSlogo').removeClass('logo-hidden');
+                    $('#rentprologo').removeClass('logo-left');
+                    $('.newAfrondButton').removeClass('newAfrondButtonTop');
+                    $('#menu').removeClass('menu-scroll');
+                    $('#user').removeClass('user-hidden');
+                }
+            });
+
+            if (location.hash)
+            {
+                overrideUrlFragmentScroll(location.hash);
+            }
+        });
+
+        function overrideUrlFragmentScroll(windowHashLocation) {
+            const scrollToSection = windowHashLocation.substring(1);
+            if (scrollToSection) {
+                const targetElement = document.getElementById(scrollToSection);
+                if (targetElement) {
+                    const targetOffset = targetElement.getBoundingClientRect().top;
+                    // Extra offset is needed when in 'mobile' mode.
+                    const extraOffset = window.innerWidth >= 991 ? 50 : 68;
+                    window.scrollTo({ top: window.pageYOffset + targetOffset - extraOffset, behavior: 'instant', block: 'start' });
+                }
+            }
+        }
+
+    </script>
+    <div>
+        <script>
+    $(document).ready(function () {
+        $(".top-menu-mobile").click(function () {
+            $(this).find(".left-menu-mobile").toggle();
+            $(this).find('i').toggleClass('fa-sort-down fa-sort-up');
+        });
+
+        $("#barcodescan").focus()
+    });
+
+    function ScanBarcode() {
+        var url = '/Home/Barcode'
+        var barcode = encodeURIComponent($("#barcodescan").val());
+        window.location.replace(url + '?barcode=' + barcode);
+    }
+</script>
+
+<div class="hamburgerMenu">
+    <input type="checkbox" class="openSidebarMenu" id="openSidebarMenu">
+    <label for="openSidebarMenu" class="sidebarIconToggle">
+        <div class="spinner diagonal part-1"></div>
+        <div class="spinner horizontal"></div>
+        <div class="spinner diagonal part-2"></div>
+    </label>
+    <div id="sidebarMenu">
+        <div class="userOnMobile">
+            Welkom, sally
+        </div>
+        <ul class="sidebarMenuInner">
+                            <li class="top-menu-mobile">
+                    Producten<i class="fas fa-sort-down" style="float:right;margin-right:5px;"></i>
+<ul class="left-menu-mobile">
+            <div class="itemHead">Producten</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Product">Producten</a></li>
+                <li><a href="/Product/ProductSetIndex">Productsets</a></li>
+                <li><a href="/Product/CategoryOverview">Categorieen</a></li>
+        </ul>
+            <div class="itemHead">Planning</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Product/Agenda">Agenda</a></li>
+        </ul>
+            <div class="itemHead">Instellingen</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Product/AiSettings">AI-Instellingen</a></li>
+                <li><a href="/Product/EditProperties">Eigenschappen</a></li>
+        </ul>
+</ul>
 
 
-<body style="background:none">
-    <div class="col-xs-12">
-        <div class="RentproLogo col-xs-8">
-            <img src="/Images/logo.png" style="max-width:250px; margin-top:20px">
-        </div>
-        <div class="LoginContainer">
-            <h3>Welkom <br> Metro Events</h3>
-            <a href="http://metroevents.rentpro5.nl/" target="_blank"><img src="http://metroevents.rentpro5.nl//Company/_Template/images/headerlogo.png" /></a>
-            <section id="loginForm">
-<form action="/Account/Login" method="post"><input name="__RequestVerificationToken" type="hidden" value="dmwGIXm0xx45Nx1x10KifLeuPdItX3JG2OcqMOjuuIrLoOuVLK1BqqbFBKL4cnD8KLa8uOStq0bnKe1T0nRIfmnjLL_8KX8SihcwyXeS-_k9OCV077DizTnY0N79SlP_Pp182dwdbf-PJfkSfsXM5Q2" /><label for="UserName">Naam</label><input data-val="true" data-val-required="Vul aub uw gebruikersnaam in" id="UserName" name="UserName" style="width:280px; height:31px; border-radius: 5px; padding-left: 10px; font-size:15px " type="text" value="metro" /><span class="field-validation-valid" data-valmsg-for="UserName" data-valmsg-replace="true"></span><label for="Password">Wachtwoord</label><input data-val="true" data-val-required="Vul aub uw wachtwoord in" id="Password" name="Password" style="width:280px; height:31px; border-radius: 5px; padding-left: 10px; font-size:15px " type="password" /><input data-val="true" data-val-required="The Houd mij ingelogd field is required." id="RememberMe" name="RememberMe" type="checkbox" value="true" /><input name="RememberMe" type="hidden" value="false" /><label class="checkbox" for="RememberMe">Houd mij ingelogd</label>                    <input class="dcinlog" type="submit" value="Log in" />
-</form>                <div class="validation-summary-errors"><ul><li>De combinatie van gebruikersnaam en wachtwoord is incorrect.</li>
-</ul></div>
-            </section>
-        </div>
+                </li>
+                <li class="top-menu-mobile">
+                    Orders<i class="fas fa-sort-down" style="float:right;margin-right:5px;"></i>
+<ul class="left-menu-mobile">
+            <div class="itemHead">Orders</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Order">Overzicht</a></li>
+        </ul>
+            <div class="itemHead">Planning</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Order/AgendaNew">Agenda</a></li>
+                <li><a href="/Order/AgendaOrderSetup">Agenda instellingen</a></li>
+        </ul>
+        <ul class="itemHeadUL">
+        </ul>
+            <div class="itemHead">Export</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Order/PackingSlipOverview">Pakbon overzicht</a></li>
+        </ul>
+</ul>
+
+
+                </li>
+                <li class="top-menu-mobile">
+                    Facturen<i class="fas fa-sort-down" style="float:right;margin-right:5px;"></i>
+<ul class="left-menu-mobile">
+            <div class="itemHead">Facturen</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Invoice/ConceptInvoices">Concepten</a></li>
+                <li><a href="/Invoice/PendingInvoices">Openstaande</a></li>
+                <li><a href="/Invoice/CompletedInvoices">Betaald</a></li>
+        </ul>
+            <div class="itemHead">Borg</div>
+        <ul class="itemHeadUL">
+                <li><a href="/deposits?state=pending">Openstaande</a></li>
+                <li><a href="/deposits?state=complete">Betaald</a></li>
+                <li><a href="/deposits?state=orders">Te retourneren</a></li>
+        </ul>
+            <div class="itemHead">Terugbetaling</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Deposit/RefundOverview">Openstaande</a></li>
+        </ul>
+            <div class="itemHead">Instellingen</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Invoice/Export">Export Bestand</a></li>
+        </ul>
+</ul>
+
+
+                </li>
+                <li class="top-menu-mobile">
+                    Klanten<i class="fas fa-sort-down" style="float:right;margin-right:5px;"></i>
+<ul class="left-menu-mobile">
+            <div class="itemHead">Klanten</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Customer">Overzicht</a></li>
+        </ul>
+        <ul class="itemHeadUL">
+        </ul>
+        <ul class="itemHeadUL">
+        </ul>
+</ul>
+
+
+                </li>
+                <li class="top-menu-mobile">
+                    Offertes<i class="fas fa-sort-down" style="float:right;margin-right:5px;"></i>
+<ul class="left-menu-mobile">
+            <div class="itemHead">Offertes</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Quotation">Alle offertes</a></li>
+                <li><a href="/Quotation/Concept">Concept</a></li>
+                <li><a href="/Quotation/Reserved">Gereserveerd</a></li>
+                <li><a href="/Quotation/Expired">Openstaand/Verlopen</a></li>
+                <li><a href="/Quotation/Orderd">Besteld</a></li>
+        </ul>
+            <div class="itemHead">Instellingen</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Quotation/Settings">Reserveringsperiode</a></li>
+        </ul>
+</ul>
+
+
+                </li>
+                <li class="top-menu-mobile">
+                    Opties<i class="fas fa-sort-down" style="float:right;margin-right:5px;"></i>
+<ul class="left-menu-mobile">
+            <div class="itemHead">Transport</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Options/Transportoptions">Transportoptie</a></li>
+        </ul>
+            <div class="itemHead">Email</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Email/Templates">Templates</a></li>
+                <li><a href="/Email/EventTriggers">Verzendregels</a></li>
+                <li><a href="/Email/MailQueue">Klaarstaande berichten</a></li>
+                <li><a href="/Email/DefaultEmailAddressesEdit">Standaard E-mailadressen</a></li>
+        </ul>
+            <div class="itemHead">Prijsbeleid</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Options/Staffels">Staffels</a></li>
+                <li><a href="/Options/ExcludedPricePeriods">Uitgesloten prijsperiodes</a></li>
+                <li><a href="/Options/Borg">Borg</a></li>
+                <li><a href="/Options/Sisow">Betalingen</a></li>
+        </ul>
+            <div class="itemHead">Bestelproces</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Options/Settings">Instellingen</a></li>
+                <li><a href="/Options/ShopcartPeriods">Openingstijden</a></li>
+                <li><a href="/Options/CheckoutConditions">Checkoutvoorwaarden</a></li>
+        </ul>
+            <div class="itemHead">Externe toevoegingen</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Options/Analytics">Universal Analytics</a></li>
+                <li><a href="/Options/GoogleAnalytics4">Google Analytics 4</a></li>
+                <li><a href="/Options/Includes">Externe Javascript</a></li>
+        </ul>
+            <div class="itemHead">Instellingen</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Options/ContactFormSettings">Contactformulier</a></li>
+                <li><a href="/Options/ProductSearchMode">Zoek instellingen</a></li>
+                <li><a href="/options/searchtermredirects">Zoektermverwijzingen</a></li>
+        </ul>
+</ul>
+
+
+                </li>
+                <li class="top-menu-mobile">
+                    Website<i class="fas fa-sort-down" style="float:right;margin-right:5px;"></i>
+<ul class="left-menu-mobile">
+            <div class="itemHead">Dashboard</div>
+        <ul class="itemHeadUL">
+                <li><a href="/">Overzicht</a></li>
+                <li><a href="/Website/NewFeatures">Nieuw!</a></li>
+                <li><a href="/Website/Statistics">Statistieken</a></li>
+        </ul>
+            <div class="itemHead">DC account</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Website/PasswordEdit">Wachtwoord wijzigen</a></li>
+                <li><a href="/Website/TwoFactorEdit">Tweetraps authenticatie</a></li>
+                <li><a href="/Website/DataGridSettings">Overzichtinstellingen</a></li>
+        </ul>
+            <div class="itemHead">Content</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Website">Content pagina&#39;s</a></li>
+                <li><a href="/Website/UrlAlias">Url aliassen</a></li>
+        </ul>
+            <div class="itemHead">Website</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Website/CompanyInfoEdit">Bedrijfsinformatie</a></li>
+                <li><a href="/Website/MailAdressesEdit">Mailadressen</a></li>
+                <li><a href="/Website/Pictures">Fotobeheer</a></li>
+        </ul>
+            <div class="itemHead">Vormgeving</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Website/Presentation">Kleuren</a></li>
+                <li><a href="/Website/Logo">Logo</a></li>
+                <li><a href="/Website/Favicon">Favicon</a></li>
+                <li><a href="/Website/Menus">Menu&#39;s</a></li>
+                <li><a href="/Website/Panorama">Panorama</a></li>
+                <li><a href="/Website/Letterhead">PDF Briefpapier</a></li>
+        </ul>
+            <div class="itemHead">Losse teksten</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Website/HomePageTextSettings">Hoofdpagina</a></li>
+                <li><a href="/Website/ShoppingCartTextSettings">Winkelwagen</a></li>
+                <li><a href="/Website/CheckoutTextSettings">Checkout</a></li>
+        </ul>
+            <div class="itemHead">Caching</div>
+        <ul class="itemHeadUL">
+                <li><a href="/Website/ResetCache">Resetten</a></li>
+        </ul>
+</ul>
+
+
+                </li>
+        </ul>
     </div>
+    <div onclick="document.location='/'" style="float:right; background-color:white;margin: 11px 14px 0 0; border: 1px solid #385626 "><img src="/Images/headerlogo.png" style="height:36px;"></div>
+    <div class="logOffIcon"><a href="javascript:document.getElementById('logoutForm').submit()"><i class="fas fa-power-off"></i></a></div>
+</div>
+        <div class="rp__dc-header-login hidden-xs hidden-sm">
+            <a target="_blank" href="http://metroevents.rentpro5.nl/">metroevents.rentpro5.nl/</a><span>|</span>
+
+                
+        <span>Welkom, sally </span><span>|</span>
+<form action="/Account/LogOff" id="logoutForm" method="post"><input name="__RequestVerificationToken" type="hidden" value="S-6wx_e8sZ-Uk-oRf6md-9BfUsEG3dnJqKDEN7B56NiphJ0Z9YQZdnrIsDWYEg35g6o7p8VmSDoSDdnBOC9hOtATe8gEeIfuCVfHj-pLrCuBhdxM7l2lmLsbjW6oVO1R7AchdjhpytM9HMie-n6fk1VsoxtzzrMsV0nIiamy-Xny59dERQVDcSMJSwHW73pw0" />            <a href="javascript:document.getElementById('logoutForm').submit()">Log uit <i class="fa-solid fa-power-off"></i></a>
+</form>    
+
+        </div>
+        <header class="rp__dc-header hidden-xs hidden-sm">
+            <nav class="rp__dc-header-nav">
+                <!--Translation: Done-->
+
+<ul class="list-unstyled mb-0 p-0 flx flx-y-start">
+    <li>
+        <a class="rp__dc-header-logo flx" onclick="document.location='/'">
+            <img class="rp__dc-logo" src="/Images/rentpro-logo.png" />
+            <img class="rp__dc-wordmark" src="/Images/headerlogo.png" style="height:36px;" />
+        </a>
+    </li>
+        <li class="sideselected"><a href="/Product">Producten</a></li>
+        <li class="sideselected"><a href="/Order">Orders</a></li>
+        <li class="sideselected"><a href="/Invoice/ConceptInvoices">Facturen</a></li>
+        <li class="sideselected"><a href="/Customer">Klanten</a></li>
+        <li class="sideselected"><a href="/Quotation">Offertes</a></li>
+        <li class="sideselected"><a href="/Options/Transportoptions">Opties</a></li>
+        <li class="selected"><a href="/Website">Website</a></li>
+    <li><a href="https://rentpro.atlassian.net/wiki/spaces/RG/overview?homepageId=2311028905" target="_blank">Help</a></li>
+</ul>
+
+
+
+
+
+
+            </nav>
+        </header>
+        <script>
+            var className = "pinned";
+            var scrollTrigger = 60;
+
+            window.onscroll = function () {
+                // We add pageYOffset for compatibility with IE.
+                if (window.scrollY >= scrollTrigger || window.pageYOffset >= scrollTrigger) {
+                    document.getElementsByTagName("header")[0].classList.add(className);
+                } else {
+                    document.getElementsByTagName("header")[0].classList.remove(className);
+                }
+            };
+        </script>
+
+        <div id="content-container" class="rp__dc-main-wrapper flx flx-gap flx-x-start flx-y-start">
+            <!--Translation: Done-->
+<link href="/Content/inputfieldstyle.css" rel="stylesheet" type="text/css">
+<script src="/Content/js/inputfield.js"></script>
+
+<aside id="aside" class="rp__dc-aside hidden-xs hidden-sm">
+    <div class="rp__dc-aside-inner">
+        <nav class="rp__dc-aside-nav ">
+            <h2>Websitebeheer</h2>
+                    <h3>Dashboard</h3>
+                <ul class="list-unstyled" style="margin-top: 0px;">
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/">Overzicht</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/NewFeatures">Nieuw!</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/Statistics">Statistieken</a></li>
+                </ul>
+                    <h3>DC account</h3>
+                <ul class="list-unstyled" style="margin-top: 0px;">
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/PasswordEdit">Wachtwoord wijzigen</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/TwoFactorEdit">Tweetraps authenticatie</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/DataGridSettings">Overzichtinstellingen</a></li>
+                </ul>
+                    <h3>Content</h3>
+                <ul class="list-unstyled" style="margin-top: 0px;">
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website">Content pagina&#39;s</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/UrlAlias">Url aliassen</a></li>
+                </ul>
+                    <h3>Website</h3>
+                <ul class="list-unstyled" style="margin-top: 0px;">
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/CompanyInfoEdit">Bedrijfsinformatie</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/MailAdressesEdit">Mailadressen</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/Pictures">Fotobeheer</a></li>
+                </ul>
+                    <h3>Vormgeving</h3>
+                <ul class="list-unstyled" style="margin-top: 0px;">
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/Presentation">Kleuren</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/Logo">Logo</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/Favicon">Favicon</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/Menus">Menu&#39;s</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/Panorama">Panorama</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/Letterhead">PDF Briefpapier</a></li>
+                </ul>
+                    <h3>Losse teksten</h3>
+                <ul class="list-unstyled" style="margin-top: 0px;">
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/HomePageTextSettings">Hoofdpagina</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/ShoppingCartTextSettings">Winkelwagen</a></li>
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/CheckoutTextSettings">Checkout</a></li>
+                </ul>
+                    <h3>Caching</h3>
+                <ul class="list-unstyled" style="margin-top: 0px;">
+                        <li class="flx flx-y-start"><i class="fa-solid fa-angle-right"></i>&nbsp;<a href="/Website/ResetCache">Resetten</a></li>
+                </ul>
+        </nav>
+        <div class="rp__dc-aside-search">
+<form action="/Order" class="rp__dc-aside-search-form flx" method="get">                <input class="rp__dc-aside-search-input" type="text" name="searchvalue" placeholder="Order zoeken" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Order zoeken'">
+                <button class="rp__dc-aside-search-submit" type="submit" value="/f002" id="OrderSearchButton"><i class="fas fa-search"></i></button>
+</form>        </div>
+    </div>
+</aside>
+            <main id="main" class="container-algemeen rp__dc-main">
+                 
+
+<div class="dcconteainer flx flx-gap flx-x-start flx-y-start">
+    <div class="flx flx-grow flx-column flx-gap flx-x-start flx-y-start">
+
+<div class="DCwidget" id="DcGrid">
+<style>
+    .detailButton {
+        overflow: visible;
+        width: auto;
+    }
+
+    .detailButton {
+        text-align: left;
+        font-size: 11px;
+        color: #006FA4;
+        background: none;
+        margin: 0;
+        padding: 0;
+        border: none;
+        cursor: pointer;
+        -moz-user-select: text;
+    }
+
+        .detailButton span {
+            text-decoration: underline;
+        }
+
+        .detailButton:hover span,
+        .detailButton:focus span {
+            color: black;
+        }
+</style>
+<div class="table">
+
+    <div class="head" style="background-color:#b91b1b">
+
+
+        <div class="title">Let op!</div>
+
+
+
+
+                
+
+                                                    
+
+
+            <div style="float:right; margin-right: 10px; margin-top: -2px;">
+                Aantal per pagina:
+                <select id="ChecksMax">
+                            <option value="5" >5</option>
+                            <option value="10" selected>10</option>
+                            <option value="25" >25</option>
+                            <option value="50" >50</option>
+                            <option value="999" >Alles</option>
+
+                </select>
+            </div>
+            <script>
+                $("#ChecksMax").change(function () {
+                    var $this = $(this);
+                    var params = {
+                        max: $("#ChecksMax option:selected").val(),
+                    };
+                    $.ajax({
+                        type: "GET",
+                        url: '/Home/ChecksDatagrid',
+                        data: params,
+                        success: function (data) {
+                            $this.closest('.table').html(data);
+                        }
+                    })
+                });
+            </script>
+
+                                    </div>
+    <table cellspacing="0" border="0" class="noBold gvItems">
+        <tr class="head" style="background-color: rgb(139, 205, 119);">
+                <th scope="col" class="" style="background-color:#949FA5;" >
+Prioriteit
+
+
+                </th>
+                <th scope="col" class="" style="" >
+Onderwerp
+
+
+                </th>
+                <th scope="col" class="" style="" >
+Item
+
+
+                </th>
+                <th scope="col" class="" style="" >
+Oplossen
+
+
+                </th>
+        </tr>
+            <tr class="oneven">
+        <td style="" >
+                    <img src="/Images/Actions/Urgent-2.png" />
+        </td>
+        <td style="" >
+Er zijn producten zonder afbeelding in de webshop        </td>
+        <td style="" >
+54, Kabelkit DJ-Gear connectiekit        </td>
+        <td style="" >
+                    <a title="Oplossen" href="http://metroeventsdc.rentpro5.nl//product/edit/54">Oplossen</a>
+        </td>
+            </tr>
+            <tr class="even">
+        <td style="" >
+                    <img src="/Images/Actions/Urgent-2.png" />
+        </td>
+        <td style="" >
+Er zijn producten zonder afbeelding in de webshop        </td>
+        <td style="" >
+55, DJM-900NXS + 2x CDJ2000NXS        </td>
+        <td style="" >
+                    <a title="Oplossen" href="http://metroeventsdc.rentpro5.nl//product/productsetedit/55">Oplossen</a>
+        </td>
+            </tr>
+            <tr class="oneven">
+        <td style="" >
+                    <img src="/Images/Actions/Urgent-2.png" />
+        </td>
+        <td style="" >
+Er zijn producten zonder afbeelding in de webshop        </td>
+        <td style="" >
+58, DJM-900NXS + 3x CDJ2000NXS2        </td>
+        <td style="" >
+                    <a title="Oplossen" href="http://metroeventsdc.rentpro5.nl//product/productsetedit/58">Oplossen</a>
+        </td>
+            </tr>
+            <tr class="even">
+        <td style="" >
+                    <img src="/Images/Actions/Urgent-1.png" />
+        </td>
+        <td style="" >
+De inhoud van sommige content-pagina&#39;s zijn nog niet ingevuld        </td>
+        <td style="" >
+Contentpagina Veilig winkelen is nog niet ingevuld         </td>
+        <td style="" >
+                    <a title="Oplossen" href="http://metroeventsdc.rentpro5.nl//website/ContentEdit/5">Oplossen</a>
+        </td>
+            </tr>
+            <tr class="oneven">
+        <td style="" >
+                    <img src="/Images/Actions/Urgent-1.png" />
+        </td>
+        <td style="" >
+De inhoud van sommige content-pagina&#39;s zijn nog niet ingevuld        </td>
+        <td style="" >
+Contentpagina Levering is nog niet ingevuld         </td>
+        <td style="" >
+                    <a title="Oplossen" href="http://metroeventsdc.rentpro5.nl//website/ContentEdit/6">Oplossen</a>
+        </td>
+            </tr>
+            <tr class="even">
+        <td style="" >
+                    <img src="/Images/Actions/Urgent-1.png" />
+        </td>
+        <td style="" >
+De inhoud van sommige content-pagina&#39;s zijn nog niet ingevuld        </td>
+        <td style="" >
+Contentpagina Klantenservice is nog niet ingevuld         </td>
+        <td style="" >
+                    <a title="Oplossen" href="http://metroeventsdc.rentpro5.nl//website/ContentEdit/7">Oplossen</a>
+        </td>
+            </tr>
+            <tr class="oneven">
+        <td style="" >
+                    <img src="/Images/Actions/Urgent-1.png" />
+        </td>
+        <td style="" >
+De inhoud van sommige content-pagina&#39;s zijn nog niet ingevuld        </td>
+        <td style="" >
+Contentpagina Onze Partners is nog niet ingevuld         </td>
+        <td style="" >
+                    <a title="Oplossen" href="http://metroeventsdc.rentpro5.nl//website/ContentEdit/8">Oplossen</a>
+        </td>
+            </tr>
+            <tr class="even">
+        <td style="" >
+                    <img src="/Images/Actions/Urgent-1.png" />
+        </td>
+        <td style="" >
+De inhoud van sommige content-pagina&#39;s zijn nog niet ingevuld        </td>
+        <td style="" >
+Contentpagina Order Betaald is nog niet ingevuld         </td>
+        <td style="" >
+                    <a title="Oplossen" href="http://metroeventsdc.rentpro5.nl//website/ContentEdit/9">Oplossen</a>
+        </td>
+            </tr>
+            <tr class="oneven">
+        <td style="" >
+                    <img src="/Images/Actions/Urgent-1.png" />
+        </td>
+        <td style="" >
+De inhoud van sommige content-pagina&#39;s zijn nog niet ingevuld        </td>
+        <td style="" >
+Contentpagina Order Afgerond is nog niet ingevuld         </td>
+        <td style="" >
+                    <a title="Oplossen" href="http://metroeventsdc.rentpro5.nl//website/ContentEdit/10">Oplossen</a>
+        </td>
+            </tr>
+            <tr class="even">
+        <td style="" >
+                    <img src="/Images/Actions/Urgent-1.png" />
+        </td>
+        <td style="" >
+De inhoud van sommige content-pagina&#39;s zijn nog niet ingevuld        </td>
+        <td style="" >
+Contentpagina Uw winkelwagen is leeg is nog niet ingevuld         </td>
+        <td style="" >
+                    <a title="Oplossen" href="http://metroeventsdc.rentpro5.nl//website/ContentEdit/12">Oplossen</a>
+        </td>
+            </tr>
+    </table>
+
+</div>
+
+
+<div id="divid">
+</div>
+<div id="TransportplannerDetails">
+</div>
+<script>
+
+    function updateTpDetail(date) {
+      var url = '/TransportSchedule/TransportPlannerDetail';
+        $('#TransportplannerDetails').load(url, { date: date });
+    };
+
+</script>
+</div>
+
+<script>
+    $(document).ready(function () {
+        if ($('#DcGrid').text().length == 0) {
+            $('#DcGrid').hide();
+        }
+    });
+</script>
+    <div class="DCwidget" id="emailgrid">
+
+<link rel="stylesheet" type="text/css" href="/Content/w2UI/w2ui-1.5.rc1.min.css" />
+
+<script type="text/javascript" src="/Content/w2UI/w2ui-1.5.rc1.min.js"></script>
+<style>
+    .messagepop {
+        background-color: #FFFFFF;
+        cursor: default;
+        position: absolute;
+        margin: auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        text-align: left;
+        z-index: 50;
+    }
+
+    .messageHeader {
+        background-image: url(/Images/table/tableheader-middle.gif);
+        background-repeat: repeat-x;
+        padding: .7em 1em;
+        font-size: 17px;
+        color: white;
+    }
+
+    .messageContent {
+        padding: 1em 1em 0 1em;
+        margin-top: 7px;
+    }
+
+    .headerbutton {
+        float: right;
+        font-weight: bold;
+        font-size: 12px;
+        line-height: 14px;
+        margin: 8px 10px 5px 5px;
+        padding: 5px 10px;
+    }
+</style>
+<div class="table">
+    <div class="head">
+        <div class="title">Klaarstaande emailberichten (1)</div>
+        <a id="sendemails" class="button button-small headerbutton"  style="color:white">Verzend alle klaarstaande berichten</a>
+        <a class="button button-small headerbutton" href="/Email/DeleteAllOpenMails?Length=5" style="color:white">Verwijder alle klaarstaande berichten</a>
+    </div>
+    <table cellspacing="0" border="0" class="noBold gvItems">
+        <thead>
+            <tr class="head" style="background-color: rgb(139, 205, 119);">
+                <th scope="col" style="background-image:none;">
+                    Datum aangemaakt
+                </th>
+                <th scope="col" style="background-image:none;">
+                    Onderwerp
+                </th>
+                <th scope="col" style="background-image: none;">
+                    Ontvanger
+                </th>
+                <th scope="col" style="background-image: none;">
+                    Gekoppeld aan
+                </th>
+                <th scope="col" style="background-image: none;">
+                    Verzendtijd
+                </th>
+                <th scope="col" style="background-image: none;">
+                    Acties
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+                <tr class="oneven" style="">
+                    <td style="">
+                        zo 26 jan 13:03
+                    </td>
+                    <td style="">
+                        &nbsp;
+                            <a href="/Email/QueueObject/1" title="bewerken">
+                                Digitale Offerte Offerte 20253
+                            </a>
+                    </td>
+                    <td style="">
+                        brigit@rentpro.nl
+                    </td>
+                    <td style="">
+                                <a href="/Quotation/Edit/3">Offerte 3</a>
+                    </td>
+                    <td style="">
+                            <span>direct</span>
+                    </td>
+                    <td style="">
+                        <a href="/Email/SendQueueObject/1"><img title="Versturen" width="25" height="25" src="../../Images/Actions/e-mail.png" /></a>
+                        &nbsp;
+                        <a style="cursor:pointer;" onclick="deleteEmailPopUp(1)"><img title="Verwijderen" src="../../Images/Actions/delete.png" /></a>
+                    </td>
+                </tr>
+                    </tbody>
+    </table>
+</div>
+<script>
+    $(function () {
+        $(".remove-btn").click(function (e) {
+            e.preventDefault()
+            var url = $(this).prop("href")
+            $.confirm("Weet u zeker dat u deze klaarstaande email wilt verwijderen?", "Email verwijderen", function () {
+                window.location.href = url
+            })
+            return false
+        })
+        $(".btn_mailqueu_expand").click(function () {
+                window.location.href = "/Email/MailQueue";
+        })
+        $("#sendemails").click(function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: '/Email/GetOldEmailAmount',
+                type: 'GET',
+                success: function (result) {
+                    switch (result.amount) {
+                        case 0:
+                            var warning = '';
+                            break;
+                        case 1:
+                            var warning = 'Er is ' + result.amount + ' email ouder dan een week';
+                            break;
+                        default:
+                            var warning = 'Er zijn ' + result.amount + ' emails ouder dan een week';
+                            break;
+                    }
+                    w2popup.open({
+                        showClose: false,
+                        width: 396,
+                        height: 160,
+                        title: '',
+                        body: "<div id='OrderPopup' class='messagepop pop'><div class='messageHeader' style='text-align:center;'>Klaarstaande berichten verzenden?</div>" +
+                        "<div class='messageContent' style='text-align:center;'>" +
+                        "Wil je alle klaarstaande berichten verzenden? <br />" +
+                        "<b>"+ warning + "</b>" +
+                        "<br /><div style='margin-top: 30px; margin-left:15px; float: left;'>" +
+                        "<a class='UnderlineLink1' onclick='w2popup.close()';><u>Annuleren</u></a> </div>" +
+                        "<div style=' margin-top: 10px; margin-right:15px; float: right;'><input id='quotationToOrderButton' style='margin- left: 20px;' type='submit' value='Nu verzenden'" +
+                        "onclick='sendEmails()'" +
+                        "class='order createNew' /></div></div></div>"
+                    });
+                    return false
+                }
+
+            })
+
+        })
+
+    })
+
+    function deleteEmailPopUp(mqoID) {
+        w2popup.open({
+            showClose: false,
+            width: 396,
+            height: 160,
+            title: '',
+            body: "<div id='OrderPopup' class='messagepop pop'><div class='messageHeader' style='text-align:center;'>Email verwijderen?</div>" +
+                "<div class='messageContent' style='text-align:center;'>" +
+                "Wil je deze email verwijderen? " +
+            "<br /><div style='margin-top: 30px; margin-left:15px; float: left;'>" +
+            "<a class='UnderlineLink1' onclick='w2popup.close()';><u>Annuleren</u></a> </div>" +
+            "<div style=' margin-top: 10px; margin-right:15px; float: right;'><input style='margin- left: 20px;' type='submit' value='Verwijderen'" +
+            "onclick='deleteEmail(" + mqoID + ")'" +
+            "class='order createNew' /></div></div></div>"
+        });
+    }
+    function sendEmails() {
+        $.post('/Email/SendAllOpenMails', function (data) {
+            location.reload();
+        })
+    }
+    function deleteEmail(mqoID) {
+        $.post('/Email/DeleteQueueObject', { id: mqoID }, function (data) {
+            location.reload();
+        })
+    }
+
+</script>
+    </div>
+        <div class="DCwidget" id="weekplanninggrid" ></div>
+        <script>
+                    var url = "http://metroeventsdc.rentpro5.nl/Order/WeekplanningDataGrid";
+                    url += "?tabel=0"
+                    $("#weekplanninggrid").load(url, function () {
+                        BindControls()
+                    })
+
+                    function ChangeWeek(offset) {
+                        var current = parseInt($("#weekvalueback").val(), 10)
+                        var url = "http://metroeventsdc.rentpro5.nl/Order/WeekplanningDataGrid";
+                        url += "?offset=" + (current + offset) + "&tabel=0"
+                        $("#weekplanninggrid").load(url, function () {
+                            BindControls()
+                        })
+                    }
+
+                    function BindControls() {
+                        $("#weekback").click(function () { ChangeWeek(-1) })
+                        $("#weekforward").click(function () { ChangeWeek(1) })
+                    }
+        </script>
+        <div class="DCwidget" id="weekplanninggrid1" ></div>
+        <script>
+                    var url = "http://metroeventsdc.rentpro5.nl/Order/WeekplanningDataGrid";
+                    url += "?tabel=1"
+                    $("#weekplanninggrid1").load(url, function () {
+                        BindControlsReversed()
+                    })
+
+                    function ChangeWeekReversed(offset) {
+                        var current = parseInt($("#weekvalueback1").val(), 10)
+                        var url = "http://metroeventsdc.rentpro5.nl/Order/WeekplanningDataGrid";
+                        url += "?offset=" + (current + offset) + "&tabel=1"
+                        $("#weekplanninggrid1").load(url, function () {
+                            BindControlsReversed()
+                        })
+                    }
+
+                    function BindControlsReversed() {
+                        $("#weekback1").click(function () { ChangeWeekReversed(-1) })
+                        $("#weekforward1").click(function () { ChangeWeekReversed(1) })
+                    }
+        </script>
+<div class="DCwidget" id="customitemorders"></div>
+<script>
+    $(function () {
+                $("#customitemorders").load("http://metroeventsdc.rentpro5.nl/Order/CustomOrderItemDataGrid")
+            })
+</script><div class="DCwidget" id="unavailableorderitems"></div>
+<script>
+    $(function () {
+        $("#unavailableorderitems").load("http://metroeventsdc.rentpro5.nl/Order/UnavailableOrderItemDataGrid")
+    })
+</script><div class="DCwidget" id="lasttenorders"></div>
+<script>
+            $(function () {
+                $("#lasttenorders").load("http://metroeventsdc.rentpro5.nl/Order/LastOrdersDataGrid")
+            })
+</script>
+    <div class="DCwidget" id="opencustomercommunications"></div>
+    <script>
+            $(function () {
+                $("#opencustomercommunications").load("http://metroeventsdc.rentpro5.nl/CustomerCommunication/OpenCustomerCommunicationDataGrid")
+            })
+    </script>
+
+    </div>
+    <div class="rp__dc-quickview flx flx-column flx-gap flx-x-start flx-y-start hidden-xs hidden-sm">
+        <div class="DCwidget" style="">
+            <header><i class="bi bi-graph-up-arrow"></i> Quickview</header>
+            <div id="webshopinfo" class="flx flx-md-column flx-x-between" style="background-color: white; border: 3px solid #0070a2; border-top: none;"></div>
+            <script>
+                $(function() {
+                    $("#webshopinfo").load("http://metroeventsdc.rentpro5.nl/Website/WebshopInfo")
+                })
+            </script>
+        </div>
+
+        <div class="DCwidget">
+            <header>Product Score <b>95</b></header>
+            <div class="p-3" style="background-color: white;">
+                <div class="meter"><span id="progbar" style="width: 95%"></span></div>
+            </div>
+        </div>
+
+
+        <div id="dayRevenuePart" class="DCwidget DCwidget-price">
+            <header>Dag omzet<span style="font-size: 10px;">&nbsp;&nbsp;Incl. BTW</span></header>
+            <div id="dayRevenue" class="py-3 text-bold" style="background-color: white; font-size: 26px; font-weight: bold">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 100 100" overflow="visible" fill="#70aa2c" stroke="none"><defs><circle id="loader" r="4" cx="50" cy="50" transform="translate(0 -30)"/></defs><use xlink:href="#loader" transform="rotate(36 50 50)"><animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.10s" repeatCount="indefinite"></animate></use><use xlink:href="#loader" transform="rotate(72 50 50)"><animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.20s" repeatCount="indefinite"></animate></use><use xlink:href="#loader" transform="rotate(108 50 50)"><animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.30s" repeatCount="indefinite"></animate></use><use xlink:href="#loader" transform="rotate(144 50 50)"><animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.40s" repeatCount="indefinite"></animate></use><use xlink:href="#loader" transform="rotate(180 50 50)"><animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.50s" repeatCount="indefinite"></animate></use><use xlink:href="#loader" transform="rotate(216 50 50)"><animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.60s" repeatCount="indefinite"></animate></use><use xlink:href="#loader" transform="rotate(252 50 50)"><animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.70s" repeatCount="indefinite"></animate></use><use xlink:href="#loader" transform="rotate(288 50 50)"><animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.80s" repeatCount="indefinite"></animate></use><use xlink:href="#loader" transform="rotate(324 50 50)"><animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.90s" repeatCount="indefinite"></animate></use><use xlink:href="#loader" transform="rotate(360 50 50)"><animate attributeName="opacity" values="0;1;0" dur="1s" begin="1.00s" repeatCount="indefinite"></animate></use></svg>
+            </div>
+                <div style="font-size: 12px; font-weight: normal"><span id="dayRevenueExcl"></span> (excl. BTW)</div>
+            <script>
+                $(function() {
+                    $("#dayRevenue").load("http://metroeventsdc.rentpro5.nl/Website/DayRevenue?swapped=False", function (responseTxt, statusTxt, xhr) {
+                        if (statusTxt == "error") {
+                            $("#dayRevenuePart").hide();
+                        }
+                    })
+                })
+            </script>
+                <script>
+                    $(function() {
+                        $("#dayRevenueExcl").load("http://metroeventsdc.rentpro5.nl/Website/DayRevenue?swapped=True")
+                    })
+                </script>
+        </div>
+
+
+
+            <div class="DCwidget DCwidget-price">
+                <header>Klanten vandaag online</header>
+                <div class="py-3 text-bold" style="background-color: white; font-size: 26px; font-weight: bold">0</div>
+            </div>
+</div>
+</div>
+            </main>
+        </div>
+        <script>
+            function setHeight(element1, element2) {
+                var viewportHeight = window.innerHeight;
+                var element1Height = element1.offsetHeight;
+                var element2Height = element2.offsetHeight;
+                var element2OffsetTop = element2.offsetTop;
+
+                if (element1Height > viewportHeight) {
+                    element2.style.height = element1Height + "px";
+                } else {
+                    element2.style.height = (viewportHeight - element2OffsetTop) + "px";
+                }
+            }
+            var element1 = document.getElementById("main");
+            var element2 = document.getElementById("aside");
+            setHeight(element1, element2);
+        </script>
+    </div>
+    <script>
+        $(function () {
+            $(".feedbackButtonBox").click(function () {
+                $.feedback("Geef Rentpro je feedback. Noem één verbetering of toevoeging voor deze back-office, zodat je er prettiger mee kunt werken?", "Feedback back-office Rentpro", 1, "http://metroeventsdc.rentpro5.nl/", "sally")
+            })
+        })
+        $.datepicker.regional['nl'] = {
+            clearText: 'Effacer',
+            clearStatus: '',
+            closeText: 'sluiten',
+            closeStatus: 'Onveranderd sluiten ',
+            prevText: '<vorige',
+            prevStatus: 'Zie de vorige maand',
+            nextText: 'volgende>',
+            nextStatus: 'Zie de volgende maand',
+            currentText: 'Huidige',
+            currentStatus: 'Bekijk de huidige maand',
+            monthNames: [
+                'januari', 'februari', 'maart', 'april', 'mei', 'juni',
+                'juli', 'augustus', 'september', 'oktober', 'november', 'december'
+            ],
+            monthNamesShort: [
+                'jan', 'feb', 'mrt', 'apr', 'mei', 'jun',
+                'jul', 'aug', 'sep', 'okt', 'nov', 'dec'
+            ],
+            monthStatus: 'Bekijk een andere maand',
+            yearStatus: 'Bekijk nog een jaar',
+            weekHeader: 'Sm',
+            weekStatus: '',
+            dayNames: ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'],
+            dayNamesShort: ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'],
+            dayNamesMin: ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'],
+            dayStatus: 'Gebruik DD als de eerste dag van de week',
+            dateStatus: 'Kies DD, MM d',
+            dateFormat: 'dd-mm-yy',
+            firstDay: 1,
+            initStatus: 'Kies een datum',
+            isRTL: false
+        };
+        $.datepicker.setDefaults($.datepicker.regional['nl']);
+    </script>
 </body>
-</html>
+</html>
